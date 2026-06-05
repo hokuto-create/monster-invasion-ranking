@@ -44,7 +44,7 @@
 
 | 名前 | 値 |
 |---|---|
-| `VAPID_PRIVATE_KEY` | `ANEEmN6cQ2H91hgfsQUZtjCnpCUFoW9gxwA6QKPmMmM` |
+| `VAPID_PRIVATE_KEY` | `（生成したVAPID秘密鍵。非公開・Cloudflareのsecretに登録済み）` |
 | `NOTIFY_SECRET` | **自分で決めた長いランダム文字列**（例: 40文字くらい。メモしておく） |
 
 追加したら **Deploy / Save** で反映。

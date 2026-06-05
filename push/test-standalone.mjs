@@ -1,8 +1,12 @@
 // worker-standalone.js の暗号化・VAPID署名が正しいか検証する（Node 22 で実行）
 import { vapidAuth, encryptPayload, b64url, b64urlToBytes } from './worker-standalone.js';
 
-const VAPID_PUBLIC = 'BIg_g551l8PAayLBanmfP2NkeHjp0YTtdQaLmpAAIgQkx5dBeyvNxrwcNnyNG3QHwdfEuH0O9kHufJtw3uVMwek';
-const VAPID_PRIVATE = 'ANEEmN6cQ2H91hgfsQUZtjCnpCUFoW9gxwA6QKPmMmM';
+// テスト用のVAPID鍵をその場で生成（本番の鍵は使わない）
+const _vapidKp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+const _pj = await crypto.subtle.exportKey('jwk', _vapidKp.publicKey);
+const _sj = await crypto.subtle.exportKey('jwk', _vapidKp.privateKey);
+const VAPID_PUBLIC = b64url(concat(Uint8Array.of(4), b64urlToBytes(_pj.x), b64urlToBytes(_pj.y)));
+const VAPID_PRIVATE = _sj.d;
 
 function concat(...arrs) {
   let len = 0; for (const a of arrs) len += a.length;
