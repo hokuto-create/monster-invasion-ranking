@@ -1,4 +1,4 @@
-const CACHE_NAME = 'monster-ranking-v3';
+const CACHE_NAME = 'monster-ranking-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -9,10 +9,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
   self.skipWaiting();
+  // 一部のアセット(アイコン等)が404でも起動を失敗させない
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(ASSETS.map(a => cache.add(a)))
+    )
+  );
 });
 
 self.addEventListener('activate', e => {
