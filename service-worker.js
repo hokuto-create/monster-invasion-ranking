@@ -1,4 +1,4 @@
-const CACHE_NAME = 'monster-ranking-v1';
+const CACHE_NAME = 'monster-ranking-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -27,5 +27,36 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
+
+// ===== プッシュ通知 =====
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) {
+    data = { body: e.data ? e.data.text() : '' };
+  }
+  const title = data.title || '魔物襲来 ランキング';
+  const options = {
+    body: data.body || 'ランキングが更新されました',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: 'monster-ranking-update',
+    renotify: true,
+    data: { url: data.url || './index.html' }
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || './index.html';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if ('focus' in c) { c.navigate(target); return c.focus(); }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    })
   );
 });

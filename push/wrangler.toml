@@ -1,0 +1,22 @@
+name = "monster-push"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# KV: 購読者の保存先。`wrangler kv namespace create SUBSCRIPTIONS` で作成し、
+# 出力された id をここに貼り付けてください。
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS"
+id = "ここにKV namespaceのIDを貼る"
+
+[vars]
+# VAPID 公開鍵（index.html の vapidPublicKey と同じ値）
+VAPID_PUBLIC_KEY = "BIg_g551l8PAayLBanmfP2NkeHjp0YTtdQaLmpAAIgQkx5dBeyvNxrwcNnyNG3QHwdfEuH0O9kHufJtw3uVMwek"
+# 連絡先（mailto: もしくはサイトURL）
+VAPID_SUBJECT = "mailto:t_a_112358@icloud.com"
+# 許可するオリジン（GitHub Pages のURL）。検証中は "*" でも可。
+ALLOWED_ORIGIN = "*"
+
+# 以下は secret として登録（wrangler secret put）:
+#   VAPID_PRIVATE_KEY  ... VAPID 秘密鍵
+#   NOTIFY_SECRET      ... /notify を叩くための共有シークレット

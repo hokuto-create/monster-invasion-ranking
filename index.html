@@ -175,9 +175,10 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
   <div class="subtitle">JAPANESE SERVER RANKING</div>
   <div class="hdivider"></div>
 </header>
-<div style="display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:0;">
+<div style="display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:0;align-items:center;">
   <button class="a-tab active" id="navRanking" onclick="switchNav('ranking')" style="font-size:13px;padding:8px 16px;">🏆 ランキング</button>
   <button class="a-tab" id="navGraph" onclick="switchNav('graph')" style="font-size:13px;padding:8px 16px;">📈 グラフ</button>
+  <button class="notif-btn" id="notifBtn" onclick="toggleNotif()" style="display:none;margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">🔔 更新通知</button>
 </div>
 <div id="rankingView">
 <div class="date-bar" id="dateBar"></div>
@@ -780,8 +781,91 @@ function updateChart(){
 }
 </script>
 <script>
+// ===== プッシュ通知 =====
+// ↓ Cloudflare Worker をデプロイしたら、その URL をここに設定してください（末尾スラッシュなし）
+const PUSH_CONFIG = {
+  workerUrl: '',  // 例: 'https://monster-push.<あなた>.workers.dev'
+  vapidPublicKey: 'BIg_g551l8PAayLBanmfP2NkeHjp0YTtdQaLmpAAIgQkx5dBeyvNxrwcNnyNG3QHwdfEuH0O9kHufJtw3uVMwek'
+};
+
+let swReg = null;
+
+function urlB64ToUint8Array(base64){
+  const padding = '='.repeat((4 - base64.length % 4) % 4);
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function pushSupported(){
+  return 'serviceWorker' in navigator && 'PushManager' in window &&
+         'Notification' in window && !!PUSH_CONFIG.workerUrl;
+}
+
+async function refreshNotifBtn(){
+  const btn = document.getElementById('notifBtn');
+  if(!btn) return;
+  if(!pushSupported()){ btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  let sub = null;
+  try { sub = swReg && await swReg.pushManager.getSubscription(); } catch(_){}
+  if(sub && Notification.permission === 'granted'){
+    btn.textContent = '🔔 通知ON';
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.color = 'var(--gold)';
+    btn.style.background = 'rgba(240,192,64,0.1)';
+  } else {
+    btn.textContent = '🔔 更新通知';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--muted)';
+    btn.style.background = 'none';
+  }
+}
+
+async function toggleNotif(){
+  if(!pushSupported()){ alert('この環境ではプッシュ通知を利用できません'); return; }
+  if(!swReg){ alert('準備中です。少し待ってから再度お試しください'); return; }
+  const btn = document.getElementById('notifBtn');
+  try {
+    let sub = await swReg.pushManager.getSubscription();
+    if(sub && Notification.permission === 'granted'){
+      // 解除
+      await fetch(PUSH_CONFIG.workerUrl + '/unsubscribe', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      }).catch(()=>{});
+      await sub.unsubscribe();
+      await refreshNotifBtn();
+      return;
+    }
+    btn.textContent = '⏳ 設定中...';
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ alert('通知が許可されませんでした。ブラウザ/端末の設定から許可してください'); await refreshNotifBtn(); return; }
+    if(!sub){
+      sub = await swReg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(PUSH_CONFIG.vapidPublicKey)
+      });
+    }
+    const res = await fetch(PUSH_CONFIG.workerUrl + '/subscribe', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(sub)
+    });
+    if(!res.ok) throw new Error('subscribe failed: ' + res.status);
+    await refreshNotifBtn();
+    alert('更新通知をオンにしました。ランキング更新時にお知らせします。');
+  } catch(e){
+    console.warn('通知設定エラー:', e);
+    alert('通知の設定に失敗しました: ' + e.message);
+    await refreshNotifBtn();
+  }
+}
+
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./service-worker.js');
+  navigator.serviceWorker.register('./service-worker.js')
+    .then(reg => navigator.serviceWorker.ready.then(() => reg))
+    .then(reg => { swReg = reg; refreshNotifBtn(); })
+    .catch(e => console.warn('SW登録失敗:', e));
 }
 </script>
 </body>
