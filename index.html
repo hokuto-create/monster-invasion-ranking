@@ -844,8 +844,13 @@ async function toggleNotif(){
     return;
   }
   if(!pushSupported()){ alert('この環境ではプッシュ通知を利用できません（ブラウザが未対応です）'); return; }
-  if(!swReg){ alert('準備中です。少し待ってから再度お試しください'); return; }
   const btn = document.getElementById('notifBtn');
+  // SW がまだ準備中なら、ここで起動完了を待つ
+  if(!swReg){
+    btn.textContent = '⏳ 準備中...';
+    try { swReg = await navigator.serviceWorker.ready; }
+    catch(_){ alert('通知の準備に失敗しました。アプリを開き直して再度お試しください'); await refreshNotifBtn(); return; }
+  }
   try {
     let sub = await swReg.pushManager.getSubscription();
     if(sub && Notification.permission === 'granted'){
@@ -885,7 +890,7 @@ async function toggleNotif(){
 refreshNotifBtn();
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./service-worker.js')
-    .then(reg => navigator.serviceWorker.ready.then(() => reg))
+    .then(reg => { swReg = reg; refreshNotifBtn(); return navigator.serviceWorker.ready; })
     .then(reg => { swReg = reg; refreshNotifBtn(); })
     .catch(e => console.warn('SW登録失敗:', e));
 }
