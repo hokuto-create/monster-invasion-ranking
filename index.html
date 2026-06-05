@@ -178,7 +178,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 <div style="display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:0;align-items:center;">
   <button class="a-tab active" id="navRanking" onclick="switchNav('ranking')" style="font-size:13px;padding:8px 16px;">🏆 ランキング</button>
   <button class="a-tab" id="navGraph" onclick="switchNav('graph')" style="font-size:13px;padding:8px 16px;">📈 グラフ</button>
-  <button class="notif-btn" id="notifBtn" onclick="toggleNotif()" style="display:none;margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">🔔 更新通知</button>
+  <button class="notif-btn" id="notifBtn" onclick="toggleNotif()" style="display:none;margin-left:auto;background:rgba(240,192,64,0.06);border:1px solid var(--gold2);color:var(--gold);font-size:11px;padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">🔔 更新通知</button>
 </div>
 <div id="rankingView">
 <div class="date-bar" id="dateBar"></div>
@@ -830,9 +830,9 @@ async function refreshNotifBtn(){
     btn.style.background = 'rgba(240,192,64,0.1)';
   } else {
     btn.textContent = '🔔 更新通知';
-    btn.style.borderColor = 'var(--border)';
-    btn.style.color = 'var(--muted)';
-    btn.style.background = 'none';
+    btn.style.borderColor = 'var(--gold2)';
+    btn.style.color = 'var(--gold)';
+    btn.style.background = 'rgba(240,192,64,0.06)';
   }
 }
 
@@ -881,6 +881,8 @@ async function toggleNotif(){
   }
 }
 
+// ボタンの表示は SW の準備を待たずに即実行（iOSでSWのreadyが遅い/来ない場合の対策）
+refreshNotifBtn();
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./service-worker.js')
     .then(reg => navigator.serviceWorker.ready.then(() => reg))
