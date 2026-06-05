@@ -29,7 +29,7 @@
 | 種類 | 値 | 置き場所 |
 |---|---|---|
 | 公開鍵 | `BIg_g551l8PAayLBanmfP2NkeHjp0YTtdQaLmpAAIgQkx5dBeyvNxrwcNnyNG3QHwdfEuH0O9kHufJtw3uVMwek` | `index.html` の `PUSH_CONFIG.vapidPublicKey` / `wrangler.toml` の `VAPID_PUBLIC_KEY`（設定済み） |
-| 秘密鍵 | `ANEEmN6cQ2H91hgfsQUZtjCnpCUFoW9gxwA6QKPmMmM` | Cloudflare の **secret** として登録（下記） |
+| 秘密鍵 | `（非公開。生成時に控えた値。Cloudflareのsecretに登録済み）` | Cloudflare の **secret** として登録（下記） |
 
 > 秘密鍵はコミットしないでください。すでに知られてしまった場合は再生成して全箇所を差し替えます。
 
@@ -48,7 +48,7 @@ npx wrangler login          # 初回のみ。ブラウザで Cloudflare にロ�
 npx wrangler kv namespace create SUBSCRIPTIONS
 
 # secret を登録（プロンプトに値を貼り付け）
-npx wrangler secret put VAPID_PRIVATE_KEY    # → ANEEmN6cQ2H91hgfsQUZtjCnpCUFoW9gxwA6QKPmMmM
+npx wrangler secret put VAPID_PRIVATE_KEY    # → 生成したVAPID秘密鍵（非公開）を貼り付け
 npx wrangler secret put NOTIFY_SECRET        # → 任意の長いランダム文字列（自分で決める）
 
 # デプロイ
