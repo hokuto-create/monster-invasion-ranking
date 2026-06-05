@@ -19,15 +19,14 @@ jobs:
 
       - name: Send push via Cloudflare Worker
         env:
-          WORKER_URL: ${{ secrets.PUSH_WORKER_URL }}
+          # Worker の URL は公開情報なので直書き（守るべきは NOTIFY_SECRET の方）
+          WORKER_URL: "https://monster-push.t-a-112358.workers.dev"
           NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
         run: |
-          # secret に混入しがちな空白・改行を除去し、末尾スラッシュも落とす
-          WORKER_URL="$(printf '%s' "$WORKER_URL" | tr -d '[:space:]')"
-          WORKER_URL="${WORKER_URL%/}"
+          # secret に混入しがちな空白・改行を除去
           NOTIFY_SECRET="$(printf '%s' "$NOTIFY_SECRET" | tr -d '[:space:]')"
-          if [ -z "$WORKER_URL" ] || [ -z "$NOTIFY_SECRET" ]; then
-            echo "PUSH_WORKER_URL / NOTIFY_SECRET secrets が未設定です。スキップします。"
+          if [ -z "$NOTIFY_SECRET" ]; then
+            echo "NOTIFY_SECRET secret が未設定です。スキップします。"
             exit 0
           fi
           HTTP_CODE="$(curl -sS -o /tmp/resp.txt -w '%{http_code}' -X POST "$WORKER_URL/notify" \
