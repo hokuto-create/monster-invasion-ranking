@@ -1,0 +1,33 @@
+name: Push notification on update
+
+# data.json が更新（main へ push）されたら、購読者へプッシュ通知を送る
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data.json'
+  workflow_dispatch: {}  # 手動テスト用
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build notification payload
+        run: node .github/scripts/build-message.js
+
+      - name: Send push via Cloudflare Worker
+        env:
+          WORKER_URL: ${{ secrets.PUSH_WORKER_URL }}
+          NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+        run: |
+          if [ -z "$WORKER_URL" ] || [ -z "$NOTIFY_SECRET" ]; then
+            echo "PUSH_WORKER_URL / NOTIFY_SECRET secrets が未設定です。スキップします。"
+            exit 0
+          fi
+          curl -fsS -X POST "$WORKER_URL/notify" \
+            -H "Authorization: Bearer $NOTIFY_SECRET" \
+            -H "Content-Type: application/json" \
+            --data @payload.json
+          echo "通知を送信しました。"

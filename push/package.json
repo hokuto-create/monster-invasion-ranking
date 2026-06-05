@@ -1,0 +1,16 @@
+{
+  "name": "monster-invasion-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "魔物襲来ランキングの Web Push 配信用 Cloudflare Worker",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "^1.0.2"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
