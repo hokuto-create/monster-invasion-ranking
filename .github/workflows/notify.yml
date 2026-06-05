@@ -22,12 +22,22 @@ jobs:
           WORKER_URL: ${{ secrets.PUSH_WORKER_URL }}
           NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
         run: |
+          # secret に混入しがちな空白・改行を除去し、末尾スラッシュも落とす
+          WORKER_URL="$(printf '%s' "$WORKER_URL" | tr -d '[:space:]')"
+          WORKER_URL="${WORKER_URL%/}"
+          NOTIFY_SECRET="$(printf '%s' "$NOTIFY_SECRET" | tr -d '[:space:]')"
           if [ -z "$WORKER_URL" ] || [ -z "$NOTIFY_SECRET" ]; then
             echo "PUSH_WORKER_URL / NOTIFY_SECRET secrets が未設定です。スキップします。"
             exit 0
           fi
-          curl -fsS -X POST "$WORKER_URL/notify" \
+          HTTP_CODE="$(curl -sS -o /tmp/resp.txt -w '%{http_code}' -X POST "$WORKER_URL/notify" \
             -H "Authorization: Bearer $NOTIFY_SECRET" \
             -H "Content-Type: application/json" \
-            --data @payload.json
+            --data @payload.json)"
+          echo "HTTP $HTTP_CODE"
+          echo "Worker response: $(cat /tmp/resp.txt)"
+          if [ "$HTTP_CODE" -ge 400 ] || [ -z "$HTTP_CODE" ]; then
+            echo "通知の送信に失敗しました。"
+            exit 1
+          fi
           echo "通知を送信しました。"
