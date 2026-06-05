@@ -801,6 +801,11 @@ function pushSupported(){
   return 'serviceWorker' in navigator && 'PushManager' in window &&
          'Notification' in window && !!PUSH_CONFIG.workerUrl;
 }
+// ボタン自体は workerUrl があれば表示する（iOS Safari でも見えるように）。
+// 実際に使えるかは toggleNotif() 側で判定して案内する。
+function notifBtnVisible(){
+  return 'serviceWorker' in navigator && !!PUSH_CONFIG.workerUrl;
+}
 
 function isIOS(){
   return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -814,11 +819,11 @@ function isStandalone(){
 async function refreshNotifBtn(){
   const btn = document.getElementById('notifBtn');
   if(!btn) return;
-  if(!pushSupported()){ btn.style.display = 'none'; return; }
+  if(!notifBtnVisible()){ btn.style.display = 'none'; return; }
   btn.style.display = '';
   let sub = null;
   try { sub = swReg && await swReg.pushManager.getSubscription(); } catch(_){}
-  if(sub && Notification.permission === 'granted'){
+  if(sub && 'Notification' in window && Notification.permission === 'granted'){
     btn.textContent = '🔔 通知ON';
     btn.style.borderColor = 'var(--gold)';
     btn.style.color = 'var(--gold)';
@@ -832,12 +837,13 @@ async function refreshNotifBtn(){
 }
 
 async function toggleNotif(){
-  if(!pushSupported()){ alert('この環境ではプッシュ通知を利用できません'); return; }
+  if(!PUSH_CONFIG.workerUrl){ alert('この環境ではプッシュ通知を利用できません'); return; }
   // iPhone/iPad はホーム画面に追加したアイコンから開かないと通知を受け取れない
   if(isIOS() && !isStandalone()){
     alert('iPhone・iPadで通知を受け取るには「ホーム画面に追加」が必要です。\n\n①画面下の共有ボタン（□に↑）をタップ\n②「ホーム画面に追加」を選ぶ\n③追加されたアイコンから開く\n④もう一度この「🔔 更新通知」をタップ\n\n※iOS 16.4以降が必要です');
     return;
   }
+  if(!pushSupported()){ alert('この環境ではプッシュ通知を利用できません（ブラウザが未対応です）'); return; }
   if(!swReg){ alert('準備中です。少し待ってから再度お試しください'); return; }
   const btn = document.getElementById('notifBtn');
   try {
