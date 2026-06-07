@@ -34,9 +34,35 @@ jobs:
             -H "Content-Type: application/json" \
             --data @payload.json)"
           echo "HTTP $HTTP_CODE"
-          echo "Worker response: $(cat /tmp/resp.txt)"
+          RESP="$(cat /tmp/resp.txt)"
+          echo "Worker response: $RESP"
           if [ "$HTTP_CODE" -ge 400 ] || [ -z "$HTTP_CODE" ]; then
             echo "通知の送信に失敗しました。"
+            {
+              echo "## 🔔 通知送信結果"
+              echo ""
+              echo "❌ 送信に失敗しました（HTTP $HTTP_CODE）。"
+              echo ""
+              echo '```'
+              echo "$RESP"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           echo "通知を送信しました。"
+
+          # Worker のレスポンス（{ ok, total, sent, removed }）を実行サマリに表示
+          TOTAL="$(printf '%s' "$RESP" | grep -o '"total":[0-9]*' | grep -o '[0-9]*' || true)"
+          SENT="$(printf '%s' "$RESP" | grep -o '"sent":[0-9]*' | grep -o '[0-9]*' || true)"
+          REMOVED="$(printf '%s' "$RESP" | grep -o '"removed":[0-9]*' | grep -o '[0-9]*' || true)"
+          {
+            echo "## 🔔 通知送信結果"
+            echo ""
+            echo "**${SENT:-?} 人**に通知を送信しました。"
+            echo ""
+            echo "| 項目 | 件数 |"
+            echo "|---|---|"
+            echo "| 送信成功（受信した人数） | ${SENT:-?} |"
+            echo "| 購読総数 | ${TOTAL:-?} |"
+            echo "| 無効として削除 | ${REMOVED:-?} |"
+          } >> "$GITHUB_STEP_SUMMARY"
