@@ -898,6 +898,13 @@ async function toggleNotif(){
 // ボタンの表示は SW の準備を待たずに即実行（iOSでSWのreadyが遅い/来ない場合の対策）
 refreshNotifBtn();
 if('serviceWorker' in navigator){
+  // 新しいSWが制御を握ったら自動リロードして最新のindex.htmlを反映する
+  // (初回インストール時はcontrollerが無いのでリロードしない)
+  const hadController = !!navigator.serviceWorker.controller;
+  let swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(hadController && !swReloaded){ swReloaded = true; location.reload(); }
+  });
   navigator.serviceWorker.register('./service-worker.js')
     .then(reg => { swReg = reg; refreshNotifBtn(); return navigator.serviceWorker.ready; })
     .then(reg => { swReg = reg; refreshNotifBtn(); })
