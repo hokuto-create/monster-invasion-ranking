@@ -1,4 +1,4 @@
-const CACHE_NAME = 'monster-ranking-v14';
+const CACHE_NAME = 'monster-ranking-v15';
 const ASSETS = [
   './index.html',
   './manifest.json',
