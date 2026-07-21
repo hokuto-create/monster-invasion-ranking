@@ -1,0 +1,448 @@
+{
+  "snapshots": [
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "覇弓戦盟",
+        "clan_id": 60748,
+        "level": 11,
+        "members": "45/50",
+        "total_power": "690.60M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "Dan5zakaSA",
+          "player_id": null,
+          "power": "48.61M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ジェー",
+          "player_id": null,
+          "power": "46.38M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ベビ",
+          "player_id": null,
+          "power": "29.30M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "へいちょ",
+          "player_id": null,
+          "power": "21.07M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ぽるぺがも",
+          "player_id": null,
+          "power": "17.21M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "リヴァイ兵長",
+          "player_id": null,
+          "power": "15.85M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "Siriusﷻ",
+        "clan_id": 67895,
+        "level": 11,
+        "members": "49/50",
+        "total_power": "631.70M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "ユースケ",
+          "player_id": null,
+          "power": "23.13M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "みくと",
+          "player_id": null,
+          "power": "35.90M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ろーとす",
+          "player_id": null,
+          "power": "23.68M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "NAO",
+          "player_id": null,
+          "power": "18.72M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "道の駅猪苗代",
+          "player_id": null,
+          "power": "18.09M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ワッキー",
+          "player_id": null,
+          "power": "15.01M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "PaperCompany",
+        "clan_id": 72520,
+        "level": 10,
+        "members": "46/48",
+        "total_power": "257.02M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "てぃっしゅ",
+          "player_id": null,
+          "power": "23.02M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "よぴ",
+          "player_id": null,
+          "power": "15.09M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "かめ吉",
+          "player_id": null,
+          "power": "12.50M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "NoBU",
+          "player_id": null,
+          "power": "10.02M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "タリファ",
+          "player_id": null,
+          "power": "8.95M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "たに",
+          "player_id": null,
+          "power": "7.99M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "オッター",
+        "clan_id": 61218,
+        "level": 11,
+        "members": "46/50",
+        "total_power": "338.30M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "うえだ",
+          "player_id": null,
+          "power": "12.98M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "だいち",
+          "player_id": null,
+          "power": "16.31M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "さば",
+          "player_id": null,
+          "power": "13.30M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "いいにく",
+          "player_id": null,
+          "power": "10.85M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ゆた坊",
+          "player_id": null,
+          "power": "10.77M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "マッハ",
+          "player_id": null,
+          "power": "8.82M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "貧乏人王国",
+        "clan_id": 107025,
+        "level": 10,
+        "members": "42/48",
+        "total_power": "284.13M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "初代貧乏人",
+          "player_id": null,
+          "power": "3.26M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "roar358",
+          "player_id": null,
+          "power": "15.90M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "Emmy0310",
+          "player_id": null,
+          "power": "14.50M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ARROWS",
+          "player_id": null,
+          "power": "14.14M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ローガン卿",
+          "player_id": null,
+          "power": "12.45M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "YGSHOCK",
+          "player_id": null,
+          "power": "10.77M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "スパム",
+        "clan_id": 62714,
+        "level": 11,
+        "members": "43/50",
+        "total_power": "356.23M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "やまいも",
+          "player_id": null,
+          "power": "16.59M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "たいじ最強",
+          "player_id": null,
+          "power": "12.10M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "じょび",
+          "player_id": null,
+          "power": "10.80M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "わゆ",
+          "player_id": null,
+          "power": "9.12M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "あじー",
+          "player_id": null,
+          "power": "8.93M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ブクブク",
+          "player_id": null,
+          "power": "7.30M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "天地魔闘",
+        "clan_id": 100279,
+        "level": 9,
+        "members": "43/46",
+        "total_power": "177.26M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "竜魔人",
+          "player_id": null,
+          "power": "11.24M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "すめ師",
+          "player_id": null,
+          "power": "14.70M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "KEN神2",
+          "player_id": null,
+          "power": "12.36M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "セナギくん",
+          "player_id": null,
+          "power": "12.35M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "東京4WD",
+          "player_id": null,
+          "power": "10.77M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "阿鼻叫喚",
+        "clan_id": 63239,
+        "level": 10,
+        "members": "42/48",
+        "total_power": "219.31M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "たこやきくん",
+          "player_id": null,
+          "power": "12.25M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "三叶",
+          "player_id": null,
+          "power": "12.80M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "めりーぷ",
+          "player_id": null,
+          "power": "10.27M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "きしりっしゅ",
+          "player_id": null,
+          "power": "10.08M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "ken10",
+          "player_id": null,
+          "power": "8.16M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "だいー伝説",
+          "player_id": null,
+          "power": "7.19M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "自由な一族",
+        "clan_id": 61983,
+        "level": 9,
+        "members": "42/46",
+        "total_power": "94.78M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "Eたろう",
+          "player_id": null,
+          "power": "8.29M"
+        }
+      ]
+    },
+    {
+      "recorded_at": "2026-07-21",
+      "clan": {
+        "name": "そばめし",
+        "clan_id": 63385,
+        "level": 10,
+        "members": "48/48",
+        "total_power": "316.86M"
+      },
+      "officers": [
+        {
+          "role": "リーダー",
+          "name": "キロサロ",
+          "player_id": null,
+          "power": "15.55M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "さき",
+          "player_id": null,
+          "power": "13.62M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "gurimaro",
+          "player_id": null,
+          "power": "12.79M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "oーskyーo",
+          "player_id": null,
+          "power": "11.25M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "すしまる",
+          "player_id": null,
+          "power": "10.43M"
+        },
+        {
+          "role": "副リーダー",
+          "name": "あまえび",
+          "player_id": null,
+          "power": "9.40M"
+        }
+      ]
+    }
+  ]
+}
