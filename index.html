@@ -301,6 +301,23 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 </div>
 <script>
 const ADMIN_PW = 'jp_ranking';
+// ===== 自動更新チェック =====
+// index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
+const APP_VERSION = '20260731-1';
+async function checkUpdate(){
+  try{
+    const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) return;
+    const m = (await res.text()).match(/APP_VERSION = '([^']+)'/);
+    if(!m || m[1] === APP_VERSION) return;
+    if(sessionStorage.getItem('reloadedFor') === m[1]) return; // リロードループ防止
+    sessionStorage.setItem('reloadedFor', m[1]);
+    location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+  }catch(e){}
+}
+checkUpdate();
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkUpdate(); });
+setInterval(checkUpdate, 10*60*1000);
 const ALL_SVS = ['1-10','11-30','31-50','51-80','81-100','101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
 const CLAN_ALIASES = {
   "X͓̽ˣLiภk̶": ["IvyLink"],
