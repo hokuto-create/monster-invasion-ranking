@@ -6,6 +6,7 @@
 
 - `data.json` — 全データ。`timestamps`(日付→集計時刻の文字列) と `entries`(1行1クラン)
 - `index.html` — 単一ファイルのビューア。`CLAN_ALIASES` に改名の系譜、`PARTIAL_DATES` に未集計サーバーを持つ
+  - **`index.html` を変更したら `APP_VERSION` も必ず更新する**（ホーム画面アプリが新バージョンを検知して自動リロードする仕組み）
 - `officers.json` / `clan-officers/` — クラン幹部の名簿スナップショット（合併・移籍の追跡用）
 
 ## 日次データの追加手順
