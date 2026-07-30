@@ -437,8 +437,10 @@ function renderRanking(){
   const day=entries.filter(e=>e.date===selectedDate&&(selectedSv==='all'||e.server===selectedSv)).sort((a,b)=>b.score-a.score);
   if(!day.length){body.innerHTML='<div class="empty">データがありません</div>';return;}
   body.innerHTML='';
+  const ranks=[];
   day.forEach((e,i)=>{
-    const r=i+1;
+    const r=(i>0&&e.score===day[i-1].score)?ranks[i-1]:i+1; // 同点は同順位
+    ranks[i]=r;
     const bc=r===1?'b1':r===2?'b2':r===3?'b3':'bx';
     const topCls=r===1?'top1':r===2?'top2':r===3?'top3':'';
     const row=document.createElement('div');
@@ -587,7 +589,7 @@ function openClanModal(clan){
         const pool=isAll
           ?entries.filter(e=>e.date===date).sort((a,b)=>b.score-a.score)
           :entries.filter(e=>e.date===date&&e.server===recServer).sort((a,b)=>b.score-a.score);
-        const rank=pool.findIndex(e=>e.clan===rec.clan)+1;
+        const rank=pool.filter(e=>e.score>rec.score).length+1; // 同点は同順位
         const rc=rank===1?'r1':rank===2?'r2':rank===3?'r3':'rx';
         const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
         row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank ${rc}">${rank}</div><div class="modal-score">${formatScore(rec.score)}${nameTag}</div>`;
@@ -708,7 +710,7 @@ function updateCompareTable(){
     if(scores.every(s=>s===null)) return;
     const valid=scores.map((s,i)=>({s,i})).filter(x=>x.s!==null).sort((a,b)=>b.s-a.s);
     const rankMap={};
-    valid.forEach((x,ri)=>rankMap[x.i]=ri+1);
+    valid.forEach((x,ri)=>rankMap[x.i]=(ri>0&&x.s===valid[ri-1].s)?rankMap[valid[ri-1].i]:ri+1); // 同点は同順位
     const winnerIdx=valid.length>0?valid[0].i:-1;
     html+=`<tr><td class="date-td">${dayLabel}</td>`;
     scores.forEach((s,i)=>{
@@ -743,7 +745,7 @@ function renderBossTable(dates,labels){
     });
     const valid=scores.map((s,i)=>({s,i})).filter(x=>x.s!==null).sort((a,b)=>b.s-a.s);
     const rankMap={};
-    valid.forEach((x,ri)=>rankMap[x.i]=ri+1);
+    valid.forEach((x,ri)=>rankMap[x.i]=(ri>0&&x.s===valid[ri-1].s)?rankMap[valid[ri-1].i]:ri+1); // 同点は同順位
     html+=`<tr><td class="date-td">${labels[di]}<br><span style="font-size:9px;opacity:0.6;">${days[dow]}</span></td>`;
     scores.forEach((s,i)=>{
       const rank=rankMap[i];
