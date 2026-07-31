@@ -335,7 +335,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-7';
+const APP_VERSION = '20260731-8';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -602,8 +602,8 @@ function renderAvgRanking(){
   stats.sort((a,b)=>(avgSort==='score'?b.avgScore-a.avgScore:a.avgRank-b.avgRank)||b.days-a.days||b.avgScore-a.avgScore);
   // 丸めると同じ表示になる隣接行だけ桁を増やして区別する
   const mainLabels=avgSort==='score'
-    ?disambiguateLabels(stats.map(s=>s.avgScore),formatScoreDec,2,4)
-    :disambiguateLabels(stats.map(s=>s.avgRank),(v,d)=>v.toFixed(d)+'位',1,3);
+    ?disambiguateLabels(stats.map(s=>s.avgScore),formatScoreDec,2)
+    :disambiguateLabels(stats.map(s=>s.avgRank),(v,d)=>v.toFixed(d)+'位',1);
   body.innerHTML='';
   const ranks=[];
   stats.forEach((s,i)=>{
@@ -666,7 +666,8 @@ function formatScoreDec(n,dec){
 }
 function formatScore(n){ return formatScoreDec(n,2); }
 // 並び順で隣接する値が同じ表示に丸まって実際は差がある場合だけ、区別できるまで桁を増やす
-function disambiguateLabels(vals,fmt,baseDec,maxDec){
+// （上限なし。20桁は倍精度で異なる値なら必ず差が出る技術的な安全弁）
+function disambiguateLabels(vals,fmt,baseDec){
   const out=vals.map(v=>fmt(v,baseDec));
   let i=0;
   while(i<vals.length){
@@ -679,7 +680,7 @@ function disambiguateLabels(vals,fmt,baseDec,maxDec){
         labels=vals.slice(i,j).map(v=>fmt(v,dec));
         ok=true;
         for(let k=1;k<labels.length;k++) if(vals[i+k]!==vals[i+k-1]&&labels[k]===labels[k-1]) ok=false;
-      }while(!ok&&dec<maxDec);
+      }while(!ok&&dec<20);
       for(let k=0;k<labels.length;k++) out[i+k]=labels[k];
     }
     i=j;
