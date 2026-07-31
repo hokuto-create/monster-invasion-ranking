@@ -335,7 +335,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-6';
+const APP_VERSION = '20260731-9';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -461,7 +461,11 @@ function initAvgSelects(){
   const dates=getDates().slice().reverse(); // 昇順
   if(!dates.length) return;
   const min=dates[0], max=dates[dates.length-1];
-  if(!avgStart||avgStart<min||avgStart>max) avgStart=min;
+  if(!avgStart){ // 初回は直近2週間（最新日を含む14日間）
+    const twoWeeksAgo=new Date(Date.parse(max)-13*864e5).toISOString().slice(0,10);
+    avgStart=twoWeeksAgo<min?min:twoWeeksAgo;
+  }
+  if(avgStart<min||avgStart>max) avgStart=min;
   if(!avgEnd||avgEnd<min||avgEnd>max) avgEnd=max;
   [['avgStart',avgStart],['avgEnd',avgEnd]].forEach(([id,v])=>{
     const el=document.getElementById(id);
@@ -600,6 +604,10 @@ function renderAvgRanking(){
     return;
   }
   stats.sort((a,b)=>(avgSort==='score'?b.avgScore-a.avgScore:a.avgRank-b.avgRank)||b.days-a.days||b.avgScore-a.avgScore);
+  // 丸めると同じ表示になる隣接行だけ桁を増やして区別する
+  const mainLabels=avgSort==='score'
+    ?disambiguateLabels(stats.map(s=>s.avgScore),formatScoreDec,2)
+    :disambiguateLabels(stats.map(s=>s.avgRank),(v,d)=>v.toFixed(d)+'位',1);
   body.innerHTML='';
   const ranks=[];
   stats.forEach((s,i)=>{
@@ -609,7 +617,7 @@ function renderAvgRanking(){
     ranks[i]=r;
     const bc=r===1?'b1':r===2?'b2':r===3?'b3':'bx';
     const topCls=r===1?'top1':r===2?'top2':r===3?'top3':'';
-    const main=avgSort==='score'?formatScore(s.avgScore):s.avgRank.toFixed(1)+'位';
+    const main=mainLabels[i];
     const sub=avgSort==='score'?`平均順位 ${s.avgRank.toFixed(1)}位・${s.days}日`:`平均 ${formatScore(s.avgScore)}・${s.days}日`;
     const row=document.createElement('div');
     row.className=`rank-row ${r===1?'r1':''} ${topCls}`;
@@ -651,14 +659,37 @@ function renderRanking(){
 }
 
 function formatServer(s){ return (s||'?').replace(' & ','<br>& '); }
-function formatScore(n){
+function formatScoreDec(n,dec){
   n=Number(n);
-  if(n>=1e15) return (n/1e15).toFixed(2)+'E';
-  if(n>=1e12) return (n/1e12).toFixed(2)+'T';
-  if(n>=1e9)  return (n/1e9).toFixed(2)+'B';
-  if(n>=1e6)  return (n/1e6).toFixed(2)+'M';
-  if(n>=1e3)  return (n/1e3).toFixed(2)+'K';
+  if(n>=1e15) return (n/1e15).toFixed(dec)+'E';
+  if(n>=1e12) return (n/1e12).toFixed(dec)+'T';
+  if(n>=1e9)  return (n/1e9).toFixed(dec)+'B';
+  if(n>=1e6)  return (n/1e6).toFixed(dec)+'M';
+  if(n>=1e3)  return (n/1e3).toFixed(dec)+'K';
   return String(n);
+}
+function formatScore(n){ return formatScoreDec(n,2); }
+// 並び順で隣接する値が同じ表示に丸まって実際は差がある場合だけ、区別できるまで桁を増やす
+// （上限なし。20桁は倍精度で異なる値なら必ず差が出る技術的な安全弁）
+function disambiguateLabels(vals,fmt,baseDec){
+  const out=vals.map(v=>fmt(v,baseDec));
+  let i=0;
+  while(i<vals.length){
+    let j=i+1;
+    while(j<vals.length&&out[j]===out[i]) j++;
+    if(j-i>1&&vals.slice(i,j).some(v=>v!==vals[i])){
+      let dec=baseDec,labels,ok;
+      do{
+        dec++;
+        labels=vals.slice(i,j).map(v=>fmt(v,dec));
+        ok=true;
+        for(let k=1;k<labels.length;k++) if(vals[i+k]!==vals[i+k-1]&&labels[k]===labels[k-1]) ok=false;
+      }while(!ok&&dec<20);
+      for(let k=0;k<labels.length;k++) out[i+k]=labels[k];
+    }
+    i=j;
+  }
+  return out;
 }
 function parseScore(s){
   s=String(s).replace(/,/g,'').trim();
