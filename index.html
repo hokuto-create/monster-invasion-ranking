@@ -151,6 +151,13 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 .ts-row{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;}
 .ts-row label{font-size:11px;color:var(--muted);}
 .ts-row input{padding:6px 10px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;outline:none;font-family:'Noto Sans JP',sans-serif;}
+/* 期間平均 */
+.mode-bar{display:flex;gap:8px;padding:16px 0 0;}
+.avg-controls{display:none;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:14px 0 10px;}
+.avg-controls.open{display:flex;}
+.avg-select{padding:7px 11px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;outline:none;font-family:'Noto Sans JP',sans-serif;}
+.avg-select:focus{border-color:var(--gold2);}
+.avg-sub{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;}
 /* JSON import */
 .json-import{padding:16px 18px;}
 .json-import textarea{width:100%;height:120px;padding:10px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none;font-family:monospace;resize:vertical;margin-bottom:10px;}
@@ -181,12 +188,35 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
   <button class="notif-btn" id="notifBtn" onclick="toggleNotif()" style="display:none;margin-left:auto;background:rgba(240,192,64,0.06);border:1px solid var(--gold2);color:var(--gold);font-size:11px;padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">🔔 更新通知</button>
 </div>
 <div id="rankingView">
+<div class="mode-bar">
+  <button class="date-chip active" id="modeDaily" onclick="setRankMode('daily')">📅 日別</button>
+  <button class="date-chip" id="modeAvg" onclick="setRankMode('avg')">📊 期間平均</button>
+</div>
 <div class="date-bar" id="dateBar"></div>
+<div class="avg-controls" id="avgControls">
+  <div class="graph-ctrl-group"><label>開始日</label><select class="avg-select" id="avgStart" onchange="onAvgPeriodChange('start')"></select></div>
+  <div class="graph-ctrl-group"><label>終了日</label><select class="avg-select" id="avgEnd" onchange="onAvgPeriodChange('end')"></select></div>
+  <div class="graph-ctrl-group"><label>並び順</label>
+    <div style="display:flex;gap:6px;">
+      <button class="boss-chip active" id="avgSortScore" onclick="setAvgSort('score')">平均スコア</button>
+      <button class="boss-chip" id="avgSortRank" onclick="setAvgSort('rank')">平均順位</button>
+    </div>
+  </div>
+  <div class="graph-ctrl-group"><label>表示対象</label>
+    <select class="avg-select" id="avgMinDays" onchange="setAvgMinDays(this.value)">
+      <option value="half" selected>半数以上集計</option>
+      <option value="3">3日以上集計</option>
+      <option value="5">5日以上集計</option>
+      <option value="10">10日以上集計</option>
+      <option value="0">すべて表示</option>
+    </select>
+  </div>
+</div>
 <div class="sv-bar" id="svBar"></div>
 <div class="ts-label" id="tsLabel"></div>
 <div class="rank-panel">
   <div class="rank-thead">
-    <span>順位</span><span>SV帯</span><span>クラン名</span><span>スコア</span>
+    <span>順位</span><span>SV帯</span><span>クラン名</span><span id="theadLast">スコア</span>
   </div>
   <div id="rankBody"><div class="loading">⏳ データ読み込み中...</div></div>
 </div>
@@ -303,7 +333,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-2';
+const APP_VERSION = '20260731-5';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -356,6 +386,9 @@ let entries = [];
 let timestamps = {};
 let selectedDate = null;
 let selectedSv = 'all';
+let rankMode = 'daily'; // 'daily' | 'avg'
+let avgStart = null, avgEnd = null, avgSort = 'score'; // avgSort: 'score' | 'rank'
+let avgMinDays = 'half'; // 足切り: 'half'（集計日数の半数以上）| '0' | '3' | '5' | '10'
 const tsEdits = {};
 
 // ===== data.json読み込み =====
@@ -407,8 +440,61 @@ function fmtD(iso){
 }
 function selDate(d){ selectedDate=d; renderAll(); }
 
+// ===== 期間平均モード =====
+function fmtDShort(iso){
+  const[y,m,d]=iso.split('-');
+  const days=['日','月','火','水','木','金','土'];
+  return `${+m}/${+d}(${days[new Date(+y,+m-1,+d).getDay()]})`;
+}
+function setRankMode(m){
+  rankMode=m;
+  document.getElementById('modeDaily').classList.toggle('active',m==='daily');
+  document.getElementById('modeAvg').classList.toggle('active',m==='avg');
+  document.getElementById('dateBar').style.display=m==='daily'?'flex':'none';
+  document.getElementById('avgControls').classList.toggle('open',m==='avg');
+  if(m==='avg') initAvgSelects();
+  renderAll();
+}
+function initAvgSelects(){
+  const dates=getDates().slice().reverse(); // 昇順
+  if(!dates.length) return;
+  if(!avgStart||!dates.includes(avgStart)) avgStart=dates[0];
+  if(!avgEnd||!dates.includes(avgEnd)) avgEnd=dates[dates.length-1];
+  const opts=sel=>dates.map(d=>`<option value="${d}"${d===sel?' selected':''}>${fmtDShort(d)}</option>`).join('');
+  document.getElementById('avgStart').innerHTML=opts(avgStart);
+  document.getElementById('avgEnd').innerHTML=opts(avgEnd);
+}
+function onAvgPeriodChange(which){
+  avgStart=document.getElementById('avgStart').value;
+  avgEnd=document.getElementById('avgEnd').value;
+  if(avgStart>avgEnd){ // 開始>終了なら動かした側に揃える
+    if(which==='start') avgEnd=avgStart; else avgStart=avgEnd;
+    initAvgSelects();
+  }
+  renderAll();
+}
+function setAvgSort(s){
+  avgSort=s;
+  document.getElementById('avgSortScore').classList.toggle('active',s==='score');
+  document.getElementById('avgSortRank').classList.toggle('active',s==='rank');
+  renderRanking();
+}
+function setAvgMinDays(v){ avgMinDays=v; renderRanking(); }
+
 function renderSvBar(){
   const bar=document.getElementById('svBar');
+  if(rankMode==='avg'){
+    const row1=['1-10','11-30','31-50','51-80','81-100'];
+    const row2=['101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
+    let html='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
+    html+=`<button class="sv-chip all${selectedSv==='all'?' active':''}" data-sv="all">全体</button>`;
+    row1.forEach(s=>{html+=`<button class="sv-chip${selectedSv===s?' active':''}" data-sv="${s}">${s}</button>`;});
+    html+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    row2.forEach(s=>{html+=`<button class="sv-chip${selectedSv===s?' active':''}" data-sv="${s}">${s}</button>`;});
+    html+='</div>';
+    bar.innerHTML=html;
+    return;
+  }
   if(!selectedDate){bar.innerHTML='';return;}
   const dateSvs=new Set(entries.filter(e=>e.date===selectedDate).map(e=>e.server));
   const partial=PARTIAL_DATES[selectedDate]||[];
@@ -433,12 +519,99 @@ function renderSvBar(){
 function selSv(sv){ selectedSv=sv; renderSvBar(); renderRanking(); updateTsLabel(); }
 
 function updateTsLabel(){
+  if(rankMode==='avg') return; // 期間平均モードではrenderAvgRankingが設定する
   const el=document.getElementById('tsLabel');
   const ts=timestamps[selectedDate];
   el.textContent=ts?'🕐 '+ts:'';
 }
 
+// 期間平均ランキング
+// ・未集計の日（全体: どこかのSV帯が未集計 / SV帯選択: そのSV帯が未集計）は集計対象外
+// ・クランが集計済みの日に載っていない日（圏外）はそのクランの平均に含めない
+function renderAvgRanking(){
+  const body=document.getElementById('rankBody');
+  const tsEl=document.getElementById('tsLabel');
+  document.getElementById('theadLast').textContent=avgSort==='score'?'平均スコア':'平均順位';
+  if(!avgStart||!avgEnd){body.innerHTML='<div class="empty">期間を選択してください</div>';tsEl.textContent='';return;}
+  const isAll=selectedSv==='all';
+  const byDate={};
+  entries.forEach(e=>{
+    if(e.date<avgStart||e.date>avgEnd) return;
+    const svMap=byDate[e.date]||(byDate[e.date]={});
+    (svMap[e.server]||(svMap[e.server]=[])).push(e);
+  });
+  const validDates=Object.keys(byDate).sort().filter(d=>{
+    const svMap=byDate[d];
+    const partial=PARTIAL_DATES[d]||[];
+    if(isAll) return ALL_SVS.every(s=>(svMap[s]||[]).length>0&&!partial.includes(s));
+    return (svMap[selectedSv]||[]).length>0&&!partial.includes(selectedSv);
+  });
+  if(!validDates.length){
+    tsEl.textContent='';
+    body.innerHTML='<div class="empty">'+(isAll?'期間内に全SV帯が集計済みの日がありません':'期間内に集計済みの日がありません')+'</div>';
+    return;
+  }
+  // 除外日数はデータが1件もない日も含めて暦日数で数える
+  const calDays=Math.round((Date.parse(avgEnd)-Date.parse(avgStart))/864e5)+1;
+  const skipped=calDays-validDates.length;
+  tsEl.textContent=`📊 ${fmtDShort(avgStart)}〜${fmtDShort(avgEnd)}・${validDates.length}日分を集計`+(skipped?`（未集計${skipped}日を除外）`:'');
+  const pools={};
+  validDates.forEach(d=>{
+    const svMap=byDate[d];
+    pools[d]=isAll?ALL_SVS.flatMap(s=>svMap[s]||[]):svMap[selectedSv];
+  });
+  // 改名エイリアスを同一クランとしてまとめる
+  const nameToGroup={}, groups=[];
+  validDates.forEach(d=>pools[d].forEach(e=>{
+    if(nameToGroup[e.clan]!==undefined) return;
+    const names=getClanNames(e.clan);
+    let g=names.map(n=>nameToGroup[n]).find(v=>v!==undefined);
+    if(g===undefined){ g=groups.length; groups.push(new Set()); }
+    names.forEach(n=>{ nameToGroup[n]=g; groups[g].add(n); });
+  }));
+  const allStats=groups.map(names=>{
+    let scoreSum=0,rankSum=0,days=0,clan='',server='';
+    validDates.forEach(d=>{ // 昇順なので最後に出た表記が表示名になる
+      const recs=pools[d].filter(e=>names.has(e.clan));
+      if(!recs.length) return; // 圏外/未参加日は無視
+      const best=recs.reduce((a,b)=>b.score>a.score?b:a);
+      const rank=pools[d].filter(e=>e.score>best.score).length+1; // 同点は同順位
+      scoreSum+=best.score; rankSum+=rank; days++;
+      clan=best.clan; server=best.server;
+    });
+    return {clan,server,avgScore:scoreSum/days,avgRank:rankSum/days,days};
+  }).filter(s=>s.days>0);
+  // 足切り: 集計日数が少ないクランを非表示
+  const minDays=avgMinDays==='half'?Math.ceil(validDates.length/2):parseInt(avgMinDays,10);
+  const stats=allStats.filter(s=>s.days>=minDays);
+  if(stats.length<allStats.length) tsEl.textContent+=`・${minDays}日未満の${allStats.length-stats.length}クランを非表示`;
+  if(!stats.length){
+    body.innerHTML='<div class="empty">'+(allStats.length?`${minDays}日以上集計されたクランがありません`:'期間内にデータがありません')+'</div>';
+    return;
+  }
+  stats.sort((a,b)=>(avgSort==='score'?b.avgScore-a.avgScore:a.avgRank-b.avgRank)||b.days-a.days||b.avgScore-a.avgScore);
+  body.innerHTML='';
+  const ranks=[];
+  stats.forEach((s,i)=>{
+    const v=avgSort==='score'?s.avgScore:s.avgRank;
+    const pv=i>0?(avgSort==='score'?stats[i-1].avgScore:stats[i-1].avgRank):null;
+    const r=(i>0&&v===pv)?ranks[i-1]:i+1; // 同値は同順位
+    ranks[i]=r;
+    const bc=r===1?'b1':r===2?'b2':r===3?'b3':'bx';
+    const topCls=r===1?'top1':r===2?'top2':r===3?'top3':'';
+    const main=avgSort==='score'?formatScore(s.avgScore):s.avgRank.toFixed(1)+'位';
+    const sub=avgSort==='score'?`平均順位 ${s.avgRank.toFixed(1)}位・${s.days}日`:`平均 ${formatScore(s.avgScore)}・${s.days}日`;
+    const row=document.createElement('div');
+    row.className=`rank-row ${r===1?'r1':''} ${topCls}`;
+    row.style.animationDelay=`${Math.min(i,20)*0.04}s`;
+    row.innerHTML=`<div><div class="badge ${bc}">${r}</div></div><div><span class="server-tag">${formatServer(s.server)}</span></div><div><div class="clan-nm ${r===1?'clan-nm-r1':r<=3?'clan-nm-top':''}" data-clan="${esc(s.clan)}">${esc(s.clan)}</div></div><div class="score-cell"><div class="score-val">${main}</div><div class="avg-sub">${sub}</div></div>`;
+    body.appendChild(row);
+  });
+}
+
 function renderRanking(){
+  if(rankMode==='avg'){ renderAvgRanking(); return; }
+  document.getElementById('theadLast').textContent='スコア';
   const body=document.getElementById('rankBody');
   if(!selectedDate){body.innerHTML='<div class="empty">日付を選択してください</div>';return;}
   const partial=PARTIAL_DATES[selectedDate]||[];
