@@ -333,7 +333,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-4';
+const APP_VERSION = '20260731-5';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -540,8 +540,7 @@ function renderAvgRanking(){
     const svMap=byDate[e.date]||(byDate[e.date]={});
     (svMap[e.server]||(svMap[e.server]=[])).push(e);
   });
-  const range=Object.keys(byDate).sort();
-  const validDates=range.filter(d=>{
+  const validDates=Object.keys(byDate).sort().filter(d=>{
     const svMap=byDate[d];
     const partial=PARTIAL_DATES[d]||[];
     if(isAll) return ALL_SVS.every(s=>(svMap[s]||[]).length>0&&!partial.includes(s));
@@ -552,7 +551,9 @@ function renderAvgRanking(){
     body.innerHTML='<div class="empty">'+(isAll?'期間内に全SV帯が集計済みの日がありません':'期間内に集計済みの日がありません')+'</div>';
     return;
   }
-  const skipped=range.length-validDates.length;
+  // 除外日数はデータが1件もない日も含めて暦日数で数える
+  const calDays=Math.round((Date.parse(avgEnd)-Date.parse(avgStart))/864e5)+1;
+  const skipped=calDays-validDates.length;
   tsEl.textContent=`📊 ${fmtDShort(avgStart)}〜${fmtDShort(avgEnd)}・${validDates.length}日分を集計`+(skipped?`（未集計${skipped}日を除外）`:'');
   const pools={};
   validDates.forEach(d=>{
