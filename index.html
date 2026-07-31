@@ -202,6 +202,15 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
       <button class="boss-chip" id="avgSortRank" onclick="setAvgSort('rank')">平均順位</button>
     </div>
   </div>
+  <div class="graph-ctrl-group"><label>表示対象</label>
+    <select class="avg-select" id="avgMinDays" onchange="setAvgMinDays(this.value)">
+      <option value="half" selected>半数以上集計</option>
+      <option value="3">3日以上集計</option>
+      <option value="5">5日以上集計</option>
+      <option value="10">10日以上集計</option>
+      <option value="0">すべて表示</option>
+    </select>
+  </div>
 </div>
 <div class="sv-bar" id="svBar"></div>
 <div class="ts-label" id="tsLabel"></div>
@@ -324,7 +333,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-3';
+const APP_VERSION = '20260731-4';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -379,6 +388,7 @@ let selectedDate = null;
 let selectedSv = 'all';
 let rankMode = 'daily'; // 'daily' | 'avg'
 let avgStart = null, avgEnd = null, avgSort = 'score'; // avgSort: 'score' | 'rank'
+let avgMinDays = 'half'; // 足切り: 'half'（集計日数の半数以上）| '0' | '3' | '5' | '10'
 const tsEdits = {};
 
 // ===== data.json読み込み =====
@@ -469,6 +479,7 @@ function setAvgSort(s){
   document.getElementById('avgSortRank').classList.toggle('active',s==='rank');
   renderRanking();
 }
+function setAvgMinDays(v){ avgMinDays=v; renderRanking(); }
 
 function renderSvBar(){
   const bar=document.getElementById('svBar');
@@ -557,7 +568,7 @@ function renderAvgRanking(){
     if(g===undefined){ g=groups.length; groups.push(new Set()); }
     names.forEach(n=>{ nameToGroup[n]=g; groups[g].add(n); });
   }));
-  const stats=groups.map(names=>{
+  const allStats=groups.map(names=>{
     let scoreSum=0,rankSum=0,days=0,clan='',server='';
     validDates.forEach(d=>{ // 昇順なので最後に出た表記が表示名になる
       const recs=pools[d].filter(e=>names.has(e.clan));
@@ -569,6 +580,14 @@ function renderAvgRanking(){
     });
     return {clan,server,avgScore:scoreSum/days,avgRank:rankSum/days,days};
   }).filter(s=>s.days>0);
+  // 足切り: 集計日数が少ないクランを非表示
+  const minDays=avgMinDays==='half'?Math.ceil(validDates.length/2):parseInt(avgMinDays,10);
+  const stats=allStats.filter(s=>s.days>=minDays);
+  if(stats.length<allStats.length) tsEl.textContent+=`・${minDays}日未満の${allStats.length-stats.length}クランを非表示`;
+  if(!stats.length){
+    body.innerHTML='<div class="empty">'+(allStats.length?`${minDays}日以上集計されたクランがありません`:'期間内にデータがありません')+'</div>';
+    return;
+  }
   stats.sort((a,b)=>(avgSort==='score'?b.avgScore-a.avgScore:a.avgRank-b.avgRank)||b.days-a.days||b.avgScore-a.avgScore);
   body.innerHTML='';
   const ranks=[];
