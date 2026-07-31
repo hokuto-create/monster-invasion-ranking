@@ -157,6 +157,8 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 .avg-controls.open{display:flex;}
 .avg-select{padding:7px 11px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;outline:none;font-family:'Noto Sans JP',sans-serif;}
 .avg-select:focus{border-color:var(--gold2);}
+input[type=date].avg-select{color-scheme:dark;min-height:33px;-webkit-appearance:none;appearance:none;}
+input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7) sepia(1) saturate(3) hue-rotate(5deg);cursor:pointer;}
 .avg-sub{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;}
 /* JSON import */
 .json-import{padding:16px 18px;}
@@ -194,8 +196,8 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 </div>
 <div class="date-bar" id="dateBar"></div>
 <div class="avg-controls" id="avgControls">
-  <div class="graph-ctrl-group"><label>開始日</label><select class="avg-select" id="avgStart" onchange="onAvgPeriodChange('start')"></select></div>
-  <div class="graph-ctrl-group"><label>終了日</label><select class="avg-select" id="avgEnd" onchange="onAvgPeriodChange('end')"></select></div>
+  <div class="graph-ctrl-group"><label>開始日</label><input type="date" class="avg-select" id="avgStart" onchange="onAvgPeriodChange('start')"></div>
+  <div class="graph-ctrl-group"><label>終了日</label><input type="date" class="avg-select" id="avgEnd" onchange="onAvgPeriodChange('end')"></div>
   <div class="graph-ctrl-group"><label>並び順</label>
     <div style="display:flex;gap:6px;">
       <button class="boss-chip active" id="avgSortScore" onclick="setAvgSort('score')">平均スコア</button>
@@ -333,7 +335,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-5';
+const APP_VERSION = '20260731-6';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -458,19 +460,27 @@ function setRankMode(m){
 function initAvgSelects(){
   const dates=getDates().slice().reverse(); // 昇順
   if(!dates.length) return;
-  if(!avgStart||!dates.includes(avgStart)) avgStart=dates[0];
-  if(!avgEnd||!dates.includes(avgEnd)) avgEnd=dates[dates.length-1];
-  const opts=sel=>dates.map(d=>`<option value="${d}"${d===sel?' selected':''}>${fmtDShort(d)}</option>`).join('');
-  document.getElementById('avgStart').innerHTML=opts(avgStart);
-  document.getElementById('avgEnd').innerHTML=opts(avgEnd);
+  const min=dates[0], max=dates[dates.length-1];
+  if(!avgStart||avgStart<min||avgStart>max) avgStart=min;
+  if(!avgEnd||avgEnd<min||avgEnd>max) avgEnd=max;
+  [['avgStart',avgStart],['avgEnd',avgEnd]].forEach(([id,v])=>{
+    const el=document.getElementById(id);
+    el.min=min; el.max=max; el.value=v;
+  });
 }
 function onAvgPeriodChange(which){
-  avgStart=document.getElementById('avgStart').value;
-  avgEnd=document.getElementById('avgEnd').value;
-  if(avgStart>avgEnd){ // 開始>終了なら動かした側に揃える
-    if(which==='start') avgEnd=avgStart; else avgStart=avgEnd;
-    initAvgSelects();
-  }
+  const dates=getDates().slice().reverse();
+  if(!dates.length) return;
+  const min=dates[0], max=dates[dates.length-1];
+  let s=document.getElementById('avgStart').value;
+  let e=document.getElementById('avgEnd').value;
+  // 未入力（クリア）は元の値に戻し、範囲外はデータのある範囲に丸める
+  if(!s) s=avgStart; if(!e) e=avgEnd;
+  s=s<min?min:(s>max?max:s);
+  e=e<min?min:(e>max?max:e);
+  if(s>e){ if(which==='start') e=s; else s=e; } // 開始>終了なら動かした側に揃える
+  avgStart=s; avgEnd=e;
+  initAvgSelects();
   renderAll();
 }
 function setAvgSort(s){
