@@ -303,7 +303,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-1';
+const APP_VERSION = '20260731-2';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -334,7 +334,6 @@ const CLAN_ALIASES = {
   "NeoDRΛCore": ["Neoアグメン", "DRΛCore", "NeoCore", "Neoメンティ", "Neoイルカ", "んふぉぉCore", "Neoユースケ", "Neo刑事", "Neoリーダー", "Neo焼肉屋", "Neoすんすん"],
   "DRiCE": ["DRΛCE"],
   "L͓̽ieภRocks": ["L͓̽ieภ絆"],
-  "アチャ伝": ["ｱﾁｬ伝"],
   "焼鳥クラン": ["焼鳥食べ隊"],
   "万鬼一華": ["砂鬼一家", "万紫千紅"],
   "絆ঌ暁": ["絆〆OrionShip"],
