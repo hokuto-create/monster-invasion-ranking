@@ -247,11 +247,13 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
         <div class="fg"><label>日付</label><input type="date" id="mDate"></div>
         <div class="fg"><label>SV帯</label>
           <select id="mServer">
-            <option value="1-10">1-10</option><option value="11-30">11-30</option><option value="31-50">31-50</option>
-            <option value="51-80">51-80</option><option value="81-100">81-100</option>
-            <option value="101-110 & 121-130">101-110 &amp; 121-130</option>
-            <option value="111-120 & 131-140">111-120 &amp; 131-140</option>
-            <option value="141-160">141-160</option><option value="161-186">161-186</option>
+            <option value="1-30">1-30</option><option value="31-100">31-100</option>
+            <option value="101-140">101-140</option><option value="141-186">141-186</option>
+            <option value="1-10">1-10（旧）</option><option value="11-30">11-30（旧）</option><option value="31-50">31-50（旧）</option>
+            <option value="51-80">51-80（旧）</option><option value="81-100">81-100（旧）</option>
+            <option value="101-110 & 121-130">101-110 &amp; 121-130（旧）</option>
+            <option value="111-120 & 131-140">111-120 &amp; 131-140（旧）</option>
+            <option value="141-160">141-160（旧）</option><option value="161-186">161-186（旧）</option>
           </select>
         </div>
         <div class="fg"><label>クラン名</label><input type="text" id="mClan" placeholder="クラン名"></div>
@@ -271,11 +273,13 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
         <input type="date" id="filterDate" oninput="renderDataTable()">
         <select id="filterServer" onchange="renderDataTable()">
           <option value="">全SV帯</option>
-          <option value="1-10">1-10</option><option value="11-30">11-30</option><option value="31-50">31-50</option>
-          <option value="51-80">51-80</option><option value="81-100">81-100</option>
-          <option value="101-110 & 121-130">101-110 &amp; 121-130</option>
-          <option value="111-120 & 131-140">111-120 &amp; 131-140</option>
-          <option value="141-160">141-160</option><option value="161-186">161-186</option>
+          <option value="1-30">1-30</option><option value="31-100">31-100</option>
+          <option value="101-140">101-140</option><option value="141-186">141-186</option>
+          <option value="1-10">1-10（旧）</option><option value="11-30">11-30（旧）</option><option value="31-50">31-50（旧）</option>
+          <option value="51-80">51-80（旧）</option><option value="81-100">81-100（旧）</option>
+          <option value="101-110 & 121-130">101-110 &amp; 121-130（旧）</option>
+          <option value="111-120 & 131-140">111-120 &amp; 131-140（旧）</option>
+          <option value="141-160">141-160（旧）</option><option value="161-186">161-186（旧）</option>
         </select>
         <input type="text" id="filterText" placeholder="クラン名検索" oninput="renderDataTable()" style="flex:1;min-width:100px;">
         <button class="btn" style="background:var(--accent);color:#fff;font-size:11px;" onclick="clearAllData()">全削除</button>
@@ -335,7 +339,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260731-9';
+const APP_VERSION = '20260803-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -350,7 +354,11 @@ async function checkUpdate(){
 checkUpdate();
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkUpdate(); });
 setInterval(checkUpdate, 10*60*1000);
-const ALL_SVS = ['1-10','11-30','31-50','51-80','81-100','101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
+// 2026-08-02 のサーバー統合で 9区分 → 4区分 に変更。日付ごとに svsFor() で区分を引く
+const SV_MERGE_DATE = '2026-08-02';
+const OLD_SVS = ['1-10','11-30','31-50','51-80','81-100','101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
+const NEW_SVS = ['1-30','31-100','101-140','141-186'];
+function svsFor(date){ return date>=SV_MERGE_DATE?NEW_SVS:OLD_SVS; }
 const CLAN_ALIASES = {
   "X͓̽ˣLiภk̶": ["IvyLink"],
   "Neoすんすん": ["NeoCore"],
@@ -497,15 +505,17 @@ function setAvgMinDays(v){ avgMinDays=v; renderRanking(); }
 
 function renderSvBar(){
   const bar=document.getElementById('svBar');
+  const rowStyle=last=>`<div style="display:flex;gap:6px;flex-wrap:wrap;${last?'':'margin-bottom:6px;'}">`;
   if(rankMode==='avg'){
-    const row1=['1-10','11-30','31-50','51-80','81-100'];
-    const row2=['101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
-    let html='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
-    html+=`<button class="sv-chip all${selectedSv==='all'?' active':''}" data-sv="all">全体</button>`;
-    row1.forEach(s=>{html+=`<button class="sv-chip${selectedSv===s?' active':''}" data-sv="${s}">${s}</button>`;});
-    html+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
-    row2.forEach(s=>{html+=`<button class="sv-chip${selectedSv===s?' active':''}" data-sv="${s}">${s}</button>`;});
-    html+='</div>';
+    // 期間平均は新旧どちらの区分も選べるように全て並べる
+    const rows=[NEW_SVS,OLD_SVS.slice(0,5),OLD_SVS.slice(5)];
+    let html='';
+    rows.forEach((row,i)=>{
+      html+=rowStyle(i===rows.length-1);
+      if(i===0) html+=`<button class="sv-chip all${selectedSv==='all'?' active':''}" data-sv="all">全体</button>`;
+      row.forEach(s=>{html+=`<button class="sv-chip${selectedSv===s?' active':''}" data-sv="${s}">${s}</button>`;});
+      html+='</div>';
+    });
     bar.innerHTML=html;
     return;
   }
@@ -513,21 +523,19 @@ function renderSvBar(){
   const dateSvs=new Set(entries.filter(e=>e.date===selectedDate).map(e=>e.server));
   const partial=PARTIAL_DATES[selectedDate]||[];
   if(selectedSv!=='all'&&!dateSvs.has(selectedSv)) selectedSv='all';
-  const row1=['1-10','11-30','31-50','51-80','81-100'];
-  const row2=['101-110 & 121-130','111-120 & 131-140','141-160','161-186'];
-  let html='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
-  html+=`<button class="sv-chip all${selectedSv==='all'?' active':''}" data-sv="all">全体</button>`;
-  row1.forEach(s=>{
-    const noData=!dateSvs.has(s);
-    html+=`<button class="sv-chip${selectedSv===s?' active':''}${noData?' no-data-sv':''}" data-sv="${s}">${s}</button>`;
+  const svs=svsFor(selectedDate);
+  const rows=svs===NEW_SVS?[NEW_SVS]:[OLD_SVS.slice(0,5),OLD_SVS.slice(5)];
+  let html='';
+  rows.forEach((row,i)=>{
+    html+=rowStyle(i===rows.length-1);
+    if(i===0) html+=`<button class="sv-chip all${selectedSv==='all'?' active':''}" data-sv="all">全体</button>`;
+    row.forEach(s=>{
+      const noData=!dateSvs.has(s);
+      const isPartial=partial.includes(s);
+      html+=`<button class="sv-chip${selectedSv===s?' active':''}${noData?' no-data-sv':''}" data-sv="${s}">${s}${isPartial?' ⚠':''}</button>`;
+    });
+    html+='</div>';
   });
-  html+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;">';
-  row2.forEach(s=>{
-    const noData=!dateSvs.has(s);
-    const isPartial=partial.includes(s);
-    html+=`<button class="sv-chip${selectedSv===s?' active':''}${noData?' no-data-sv':''}" data-sv="${s}">${s}${isPartial?' ⚠':''}</button>`;
-  });
-  html+='</div>';
   bar.innerHTML=html;
 }
 function selSv(sv){ selectedSv=sv; renderSvBar(); renderRanking(); updateTsLabel(); }
@@ -557,7 +565,7 @@ function renderAvgRanking(){
   const validDates=Object.keys(byDate).sort().filter(d=>{
     const svMap=byDate[d];
     const partial=PARTIAL_DATES[d]||[];
-    if(isAll) return ALL_SVS.every(s=>(svMap[s]||[]).length>0&&!partial.includes(s));
+    if(isAll) return svsFor(d).every(s=>(svMap[s]||[]).length>0&&!partial.includes(s));
     return (svMap[selectedSv]||[]).length>0&&!partial.includes(selectedSv);
   });
   if(!validDates.length){
@@ -572,7 +580,7 @@ function renderAvgRanking(){
   const pools={};
   validDates.forEach(d=>{
     const svMap=byDate[d];
-    pools[d]=isAll?ALL_SVS.flatMap(s=>svMap[s]||[]):svMap[selectedSv];
+    pools[d]=isAll?svsFor(d).flatMap(s=>svMap[s]||[]):svMap[selectedSv];
   });
   // 改名エイリアスを同一クランとしてまとめる
   const nameToGroup={}, groups=[];
@@ -635,7 +643,7 @@ function renderRanking(){
   const partial=PARTIAL_DATES[selectedDate]||[];
   if(selectedSv==='all'){
     const presentSvs=new Set(entries.filter(e=>e.date===selectedDate).map(e=>e.server));
-    const missingSvs=ALL_SVS.filter(s=>!presentSvs.has(s));
+    const missingSvs=svsFor(selectedDate).filter(s=>!presentSvs.has(s));
     if(missingSvs.length>0){
       body.innerHTML='<div class="empty"><div style="font-size:32px;opacity:.5;margin-bottom:12px">⚠️</div><div style="color:var(--gold);font-size:13px;margin-bottom:8px">一部未集計のため<br>全体ランキングは表示できません</div><div style="font-size:11px;color:var(--muted)">未集計：'+missingSvs.join('、')+'</div></div>';
       return;
@@ -783,7 +791,9 @@ function openClanModal(clan){
   const txt=document.createElement('textarea'); txt.innerHTML=clan; const clanName=txt.value;
   const isAll=selectedSv==='all';
   const allNames=getClanNames(clanName);
-  const clanServer=entries.find(e=>allNames.includes(e.clan))?.server||'';
+  // クランが所属した SV帯の一覧（統合前後で名前が変わるため複数になりうる）。表示は最新区分を優先
+  const clanSvs=[...new Set(entries.filter(e=>allNames.includes(e.clan)).map(e=>e.server))];
+  const clanServer=clanSvs.find(s=>NEW_SVS.includes(s))||clanSvs[0]||'';
   const aliases=getClanAliases(clanName);
   let aliasHtml='';
   if(aliases.length>0) aliasHtml=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">旧名: ${aliases.join(' / ')}</div>`;
@@ -798,7 +808,8 @@ function openClanModal(clan){
     }).filter(Boolean);
     if(recs.length===0){
       const row=document.createElement('div'); row.className='modal-row';
-      const svHasData=entries.filter(e=>e.date===date&&e.server===clanServer).length>0;
+      const svForDate=clanSvs.find(s=>svsFor(date).includes(s))||clanServer;
+      const svHasData=entries.filter(e=>e.date===date&&e.server===svForDate).length>0;
       const label=svHasData?'圏外':'未集計';
       const labelStyle=svHasData?'':'color:var(--muted);';
       row.innerHTML=`<div class="modal-date">${fmtD(date)}</div><div class="modal-rank rx" style="font-size:10px;${labelStyle}">${label}</div><div class="modal-score" style="color:var(--muted);font-size:12px;">-</div>`;
@@ -808,7 +819,7 @@ function openClanModal(clan){
         const row=document.createElement('div'); row.className='modal-row';
         if(isAll){
           const presentSvs=new Set(entries.filter(e=>e.date===date).map(e=>e.server));
-          const hasPartial=ALL_SVS.some(s=>!presentSvs.has(s));
+          const hasPartial=svsFor(date).some(s=>!presentSvs.has(s));
           if(hasPartial){
             const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
             row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank rx" style="font-size:10px;color:var(--muted);">未集計</div><div class="modal-score">${formatScore(rec.score)}${nameTag}</div>`;
