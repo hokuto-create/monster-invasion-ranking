@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260804-3';
+const APP_VERSION = '20260804-4';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -803,7 +803,7 @@ function openClanModal(clan){
   if(aliases.length>0) aliasHtml=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">旧名: ${aliases.join(' / ')}</div>`;
   // 統合前の履歴がある場合、当時は旧SV帯区分内での順位である旨を注記
   if(entries.some(e=>allNames.includes(e.clan)&&e.date<SV_MERGE_DATE))
-    aliasHtml+=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">※8/1以前は旧SV帯区分（9区分）内での順位です</div>`;
+    aliasHtml+=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">※8/1以前は旧SV帯区分（9区分）内での順位です（当時の区分は各行に表示）</div>`;
   document.getElementById('modalTitle').innerHTML=clanName+`<span style="font-size:9px;color:#80b0f0;background:rgba(64,128,224,0.15);border:1px solid rgba(64,128,224,0.25);border-radius:3px;padding:1px 5px;margin-left:7px;vertical-align:middle;line-height:1;display:inline-flex;align-items:center;">${clanServer}</span>`;
   document.getElementById('modalSubtitle').innerHTML=`${isAll?'全体順位':`SV${selectedSv}内順位`}${aliasHtml}`;
   const body=document.getElementById('modalBody'); body.innerHTML='';
@@ -819,7 +819,8 @@ function openClanModal(clan){
       const svHasData=entries.filter(e=>e.date===date&&e.server===svForDate).length>0;
       const label=svHasData?'圏外':'未集計';
       const labelStyle=svHasData?'':'color:var(--muted);';
-      row.innerHTML=`<div class="modal-date">${fmtD(date)}</div><div class="modal-rank rx" style="font-size:10px;${labelStyle}">${label}</div><div class="modal-score" style="color:var(--muted);font-size:12px;">-</div>`;
+      const svTag=date<SV_MERGE_DATE&&svForDate?`<br><span style="font-size:9px;color:#80b0f0;">旧SV${svForDate}</span>`:'';
+      row.innerHTML=`<div class="modal-date">${fmtD(date)}</div><div class="modal-rank rx" style="font-size:10px;${labelStyle}">${label}</div><div class="modal-score" style="color:var(--muted);font-size:12px;">-${svTag}</div>`;
       body.appendChild(row);
     } else {
       recs.forEach((rec,ri)=>{
@@ -829,7 +830,8 @@ function openClanModal(clan){
           const hasPartial=svsFor(date).some(s=>!presentSvs.has(s));
           if(hasPartial){
             const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
-            row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank rx" style="font-size:10px;color:var(--muted);">未集計</div><div class="modal-score">${formatScore(rec.score)}${nameTag}</div>`;
+            const svTag=date<SV_MERGE_DATE&&rec.server?`<br><span style="font-size:9px;color:#80b0f0;">旧SV${rec.server}</span>`:'';
+            row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank rx" style="font-size:10px;color:var(--muted);">未集計</div><div class="modal-score">${formatScore(rec.score)}${nameTag}${svTag}</div>`;
             body.appendChild(row); return;
           }
         }
@@ -840,7 +842,8 @@ function openClanModal(clan){
         const rank=pool.filter(e=>e.score>rec.score).length+1; // 同点は同順位
         const rc=rank===1?'r1':rank===2?'r2':rank===3?'r3':'rx';
         const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
-        row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank ${rc}">${rank}</div><div class="modal-score">${formatScore(rec.score)}${nameTag}</div>`;
+        const svTag=date<SV_MERGE_DATE?`<br><span style="font-size:9px;color:#80b0f0;">旧SV${recServer}</span>`:'';
+        row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank ${rc}">${rank}</div><div class="modal-score">${formatScore(rec.score)}${nameTag}${svTag}</div>`;
         body.appendChild(row);
       });
     }
