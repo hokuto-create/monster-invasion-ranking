@@ -331,7 +331,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 </div>
 </div><!-- end graphView -->
 <div style="margin-top:40px;padding:16px 20px;border-top:1px solid #222840;color:#6a7080;font-size:12px;line-height:2;">
-  <p>・各SV帯の上位10クランを表示しています</p>
+  <p>・各SV帯の上位20クランを表示しています</p>
   <p>・管理者の都合により集計できない日があります</p>
 </div>
 </div>
@@ -339,7 +339,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260803-1';
+const APP_VERSION = '20260804-2';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -388,7 +388,10 @@ const CLAN_ALIASES = {
   "FCやまだ": ["やまだ家"],
   "やまだ屋": ["FCやまだ", "やまだ家"],
   "やまだ豕": ["やまだ家", "やまだ屋", "FCやまだ"],
-  "貧乏人王国": ["貧乏人Family"]
+  "貧乏人王国": ["貧乏人Family"],
+  "無MUGON言ver4": ["無MUGON言ver3"],
+  "OtterCompany": ["オッター", "PaperCompany"],
+  "龍核_DRΛCore_": ["DRΛCE", "NeoCore"]
 };
 const PARTIAL_DATES = {"2026-04-25":["101-110 & 121-130","161-186"]};
 
