@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260804-4';
+const APP_VERSION = '20260804-5';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -801,8 +801,8 @@ function openClanModal(clan){
   const aliases=getClanAliases(clanName);
   let aliasHtml='';
   if(aliases.length>0) aliasHtml=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">旧名: ${aliases.join(' / ')}</div>`;
-  // 統合前の履歴がある場合、当時は旧SV帯区分内での順位である旨を注記
-  if(entries.some(e=>allNames.includes(e.clan)&&e.date<SV_MERGE_DATE))
+  // 統合前の履歴がある場合、当時は旧SV帯区分内での順位である旨を注記（全体順位では区分の影響がないため非表示）
+  if(!isAll&&entries.some(e=>allNames.includes(e.clan)&&e.date<SV_MERGE_DATE))
     aliasHtml+=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">※8/1以前は旧SV帯区分（9区分）内での順位です（当時の区分は各行に表示）</div>`;
   document.getElementById('modalTitle').innerHTML=clanName+`<span style="font-size:9px;color:#80b0f0;background:rgba(64,128,224,0.15);border:1px solid rgba(64,128,224,0.25);border-radius:3px;padding:1px 5px;margin-left:7px;vertical-align:middle;line-height:1;display:inline-flex;align-items:center;">${clanServer}</span>`;
   document.getElementById('modalSubtitle').innerHTML=`${isAll?'全体順位':`SV${selectedSv}内順位`}${aliasHtml}`;
