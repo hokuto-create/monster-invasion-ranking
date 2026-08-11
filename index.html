@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260811-2';
+const APP_VERSION = '20260811-3';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -377,14 +377,14 @@ const CLAN_ALIASES = {
   "L͓̽ieภRocks": ["L͓̽ieภ絆"],
   "L͓̽ieภﷻSirius": ["L͓̽ieภ絆", "L͓̽ieภRocks"],
   "焼鳥クラン": ["焼鳥食べ隊"],
-  "万鬼一華": ["砂鬼一家", "万紫千紅"],
+  "万鬼一華": ["砂鬼一家"],
   "絆ঌ暁": ["絆〆OrionShip"],
   "絆ঌ朧": ["絆〆UnionShip"],
   "双捷MythZENITH": ["双進MythZENITH", "双進ṀythȺres"],
-  "ねねこねこ教": ["ねこねこねこ", "のの教"],
+  "ねねこねこ教": ["ねこねこねこ"],
   "劇団おねえ": ["劇団オネエ", "BodyFeelsExit"],
   "劇団オネエღ": ["劇団おねえ", "劇団オネエ", "BodyFeelsExit"],
-  "FeasTribaL": ["XenoTribaL", "宴Joy"],
+  "FeasTribaL": ["XenoTribaL"],
   "夜桜七舞": ["夜桜ノ舞"],
   "マRA男Dの集い": ["男Dの集い"],
   "男Dの集い": ["マRA男Dの集い"],
@@ -393,9 +393,7 @@ const CLAN_ALIASES = {
   "やまだ豕": ["やまだ家", "やまだ屋", "FCやまだ"],
   "貧乏人王国": ["貧乏人Family"],
   "貧乏人小国": ["貧乏人Family", "貧乏人王国"],
-  "無MUGON言ver4": ["無MUGON言ver3"],
-  "OtterCompany": ["オッター", "PaperCompany"],
-  "龍核_DRΛCore_": ["DRΛCE", "DRiCE", "NeoCore", "NeoDRΛCore", "Neoアグメン", "DRΛCore", "Neoメンティ", "Neoイルカ", "んふぉぉCore", "Neoユースケ", "Neo刑事", "Neoリーダー", "Neo焼肉屋", "Neoすんすん"]
+  "無MUGON言ver4": ["無MUGON言ver3"]
 };
 // ===== 合併の系譜 =====
 // 複数クランが1つに合流した場合はこちら（改名は CLAN_ALIASES）。
@@ -403,6 +401,17 @@ const CLAN_ALIASES = {
 // 合併元はランキングから消滅したのを確認してから追加する（存続中は別クランなので登録しない）。
 // 合併元・合併後それぞれの改名系譜（CLAN_ALIASES）は自動で辿られる。
 const CLAN_MERGES = {
+  "万鬼一華": [{name: "万紫千紅", date: "2026-05-05"}],
+  "ねねこねこ教": [{name: "のの教", date: "2026-04-28"}],
+  "FeasTribaL": [{name: "宴Joy", date: "2026-05-12"}],
+  "OtterCompany": [
+    {name: "オッター", date: "2026-08-02"},
+    {name: "PaperCompany", date: "2026-08-02"}
+  ],
+  "龍核_DRΛCore_": [
+    {name: "DRΛCE", date: "2026-08-02"},
+    {name: "NeoCore", date: "2026-08-02"}
+  ],
   "月焔華": [
     {name: "あるてみす", date: "2026-08-10"}
     // IgnisFloris も合流予定。消滅を確認したら {name: "IgnisFloris", date: "..."} を追加する
