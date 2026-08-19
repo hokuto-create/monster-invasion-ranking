@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260813-1';
+const APP_VERSION = '20260819-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -630,7 +630,7 @@ function renderAvgRanking(){
       scoreSum+=best.score; rankSum+=rank; days++;
       clan=best.clan; server=best.server;
     });
-    return {clan,server,avgScore:scoreSum/days,avgRank:rankSum/days,days};
+    return {clan,server,avgScore:scoreSum/days,avgRank:rankSum/days,totalScore:scoreSum,days};
   }).filter(s=>s.days>0);
   // 足切り: 集計日数が少ないクランを非表示
   const minDays=avgMinDays==='half'?Math.ceil(validDates.length/2):parseInt(avgMinDays,10);
@@ -655,7 +655,7 @@ function renderAvgRanking(){
     const bc=r===1?'b1':r===2?'b2':r===3?'b3':'bx';
     const topCls=r===1?'top1':r===2?'top2':r===3?'top3':'';
     const main=mainLabels[i];
-    const sub=avgSort==='score'?`平均順位 ${s.avgRank.toFixed(1)}位・${s.days}日`:`平均 ${formatScore(s.avgScore)}・${s.days}日`;
+    const sub=avgSort==='score'?`合計 ${formatScore(s.totalScore)}・${s.days}日`:`平均 ${formatScore(s.avgScore)}・${s.days}日`;
     const row=document.createElement('div');
     row.className=`rank-row ${r===1?'r1':''} ${topCls}`;
     row.style.animationDelay=`${Math.min(i,20)*0.04}s`;
