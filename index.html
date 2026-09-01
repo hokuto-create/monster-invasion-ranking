@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260826-1';
+const APP_VERSION = '20260901-2';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -381,6 +381,7 @@ const CLAN_ALIASES = {
   "お盆休み隊": ["焼鳥食べ隊", "焼鳥クラン"],
   "焼鳥塩正統会": ["焼鳥食べ隊", "焼鳥クラン", "お盆休み隊"],
   "焼鳥ねぎま教": ["焼鳥食べ隊", "焼鳥クラン", "お盆休み隊", "焼鳥塩正統会"],
+  "ぼんじりーず": ["焼鳥食べ隊", "焼鳥クラン", "お盆休み隊", "焼鳥塩正統会", "焼鳥ねぎま教"],
   "万鬼一華": ["砂鬼一家"],
   "絆ঌ暁": ["絆〆OrionShip"],
   "絆ঌ朧": ["絆〆UnionShip"],
@@ -388,6 +389,9 @@ const CLAN_ALIASES = {
   "ねねこねこ教": ["ねこねこねこ"],
   "劇団おねえ": ["劇団オネエ", "BodyFeelsExit"],
   "劇団オネエღ": ["劇団おねえ", "劇団オネエ", "BodyFeelsExit"],
+  "劇団オネエ": ["BodyFeelsExit", "劇団おねえ", "劇団オネエღ"],
+  "劇団オニイ": ["劇団ロンリღ"],
+  "第三休憩室": ["休憩室"],
   "FeasTribaL": ["XenoTribaL"],
   "夜桜七舞": ["夜桜ノ舞"],
   "マRA男Dの集い": ["男Dの集い"],
