@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260901-2';
+const APP_VERSION = '20260902-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -411,6 +411,7 @@ const CLAN_ALIASES = {
 // 合併元・合併後それぞれの改名系譜（CLAN_ALIASES）は自動で辿られる。
 const CLAN_MERGES = {
   "万鬼一華": [{name: "万紫千紅", date: "2026-05-05"}],
+  "X͓̽ˣLiภk̶": [{name: "万鬼一華", date: "2026-09-01"}],
   "ねねこねこ教": [{name: "のの教", date: "2026-04-28"}],
   "FeasTribaL": [{name: "宴Joy", date: "2026-05-12"}],
   "OtterCompany": [
@@ -822,21 +823,26 @@ function getClanNames(clanName){
   getClanAliases(clanName).forEach(a=>all.add(a));
   return [...all];
 }
-// clanName（改名系譜を含む）が合併後クラン or 合併元なら {target, sources} を返す
-function getMergeInfo(clanName){
+// clanName（改名系譜を含む）が合併後クラン or 合併元として関わる合併を全て返す
+// （例: 万鬼一華 は 万紫千紅 を吸収した合併後クランであり、X͓̽ˣLiภk̶ への合併元でもある）
+function getMergeInfos(clanName){
   const myNames=getClanNames(clanName);
-  for(const [target,sources] of Object.entries(CLAN_MERGES)){
-    if(myNames.includes(target) || sources.some(s=>myNames.includes(s.name))) return {target,sources};
-  }
-  return null;
+  return Object.entries(CLAN_MERGES)
+    .filter(([target,sources])=>myNames.includes(target) || sources.some(s=>myNames.includes(s.name)))
+    .map(([target,sources])=>({target,sources}));
 }
 // 改名に加えて合併の系譜も含めた全名称。履歴の連結（モーダル・グラフ・平均集計）で使う
+// 連鎖合併（A→B→C）も閉包を取って全て辿る
 function getClanFamily(clanName){
   const all=new Set(getClanNames(clanName));
-  const m=getMergeInfo(clanName);
-  if(m){
-    getClanNames(m.target).forEach(n=>all.add(n));
-    m.sources.forEach(s=>getClanNames(s.name).forEach(n=>all.add(n)));
+  let grew=true;
+  while(grew){
+    grew=false;
+    for(const [target,sources] of Object.entries(CLAN_MERGES)){
+      const names=[target,...sources.map(s=>s.name)];
+      if(!names.some(n=>all.has(n))) continue;
+      names.forEach(n=>getClanNames(n).forEach(x=>{ if(!all.has(x)){ all.add(x); grew=true; } }));
+    }
   }
   return [...all];
 }
@@ -856,14 +862,13 @@ function openClanModal(clan){
   const aliases=getClanAliases(clanName);
   let aliasHtml='';
   if(aliases.length>0) aliasHtml=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">旧名: ${aliases.join(' / ')}</div>`;
-  const merge=getMergeInfo(clanName);
-  if(merge){
+  getMergeInfos(clanName).forEach(merge=>{
     const isTarget=getClanNames(clanName).includes(merge.target);
     const label=isTarget
       ?'合併元: '+merge.sources.map(s=>`${s.name}（${fmtDShort(s.date)}合流）`).join(' / ')
       :`${fmtDShort(merge.sources.find(s=>getClanNames(clanName).includes(s.name)).date)} に ${merge.target} へ合流`;
     aliasHtml+=`<div style="font-size:10px;color:#80b0f0;margin-top:3px;">⚭ ${label}</div>`;
-  }
+  });
   document.getElementById('modalTitle').innerHTML=clanName+`<span style="font-size:9px;color:#80b0f0;background:rgba(64,128,224,0.15);border:1px solid rgba(64,128,224,0.25);border-radius:3px;padding:1px 5px;margin-left:7px;vertical-align:middle;line-height:1;display:inline-flex;align-items:center;">${clanServer}</span>`;
   document.getElementById('modalSubtitle').innerHTML=`${isAll?'全体順位':`SV${selectedSv}内順位`}${aliasHtml}`;
   const body=document.getElementById('modalBody'); body.innerHTML='';
