@@ -340,7 +340,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20260902-1';
+const APP_VERSION = '20260903-3';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -408,10 +408,12 @@ const CLAN_ALIASES = {
 // 複数クランが1つに合流した場合はこちら（改名は CLAN_ALIASES）。
 // "合併後クラン": [{name: "合併元クラン", date: "合流日"}, ...古い順]
 // 合併元はランキングから消滅したのを確認してから追加する（存続中は別クランなので登録しない）。
+// 例外: 主力だけが移籍し、残留メンバーが同名で存続する場合は remains:true を付ける。
+//   合流日より前の記録は合併後クランの履歴に連結され、合流日以降の同名クランは別系譜（新クラン）として扱う。
 // 合併元・合併後それぞれの改名系譜（CLAN_ALIASES）は自動で辿られる。
 const CLAN_MERGES = {
   "万鬼一華": [{name: "万紫千紅", date: "2026-05-05"}],
-  "X͓̽ˣLiภk̶": [{name: "万鬼一華", date: "2026-09-01"}],
+  "X͓̽ˣLiภk̶": [{name: "万鬼一華", date: "2026-09-01", remains: true}],
   "ねねこねこ教": [{name: "のの教", date: "2026-04-28"}],
   "FeasTribaL": [{name: "宴Joy", date: "2026-05-12"}],
   "OtterCompany": [
@@ -466,7 +468,11 @@ document.addEventListener('click', function(e){
   const svBtn = e.target.closest('[data-sv]');
   if(svBtn){ selSv(svBtn.getAttribute('data-sv')); return; }
   const clanEl = e.target.closest('[data-clan]');
-  if(clanEl){ openClanModal(clanEl.getAttribute('data-clan')); return; }
+  if(clanEl){
+    // 系譜が分岐しているクラン（remains 合併）は、表示中の日付時点の系譜を開く
+    const asOf=rankMode==='daily'?selectedDate:rankMode==='avg'?avgEnd:null;
+    openClanModal(clanEl.getAttribute('data-clan'),asOf); return;
+  }
 });
 
 function getDates(){ return [...new Set(entries.map(e=>e.date))].sort((a,b)=>b.localeCompare(a)); }
@@ -620,18 +626,20 @@ function renderAvgRanking(){
     pools[d]=isAll?svsFor(d).flatMap(s=>svMap[s]||[]):svMap[selectedSv];
   });
   // 改名エイリアス・合併の系譜を同一クランとしてまとめる
-  const nameToGroup={}, groups=[];
+  // （系譜は名前＋期間の区間で表す。remains 合併で分岐した同名クランは別グループになる）
+  const segToGroup={}, groups=[];
   validDates.forEach(d=>pools[d].forEach(e=>{
-    if(nameToGroup[e.clan]!==undefined) return;
-    const names=getClanFamily(e.clan);
-    let g=names.map(n=>nameToGroup[n]).find(v=>v!==undefined);
-    if(g===undefined){ g=groups.length; groups.push(new Set()); }
-    names.forEach(n=>{ nameToGroup[n]=g; groups[g].add(n); });
+    const ownKey=segKey(lineageSegs(e.clan,e.date)[0]);
+    if(segToGroup[ownKey]!==undefined) return;
+    const segs=getClanFamily(e.clan,e.date);
+    let g=segs.map(x=>segToGroup[segKey(x)]).find(v=>v!==undefined);
+    if(g===undefined){ g=groups.length; groups.push([]); }
+    segs.forEach(x=>{ const k=segKey(x); if(segToGroup[k]===undefined){ segToGroup[k]=g; groups[g].push(x); } });
   }));
-  const allStats=groups.map(names=>{
+  const allStats=groups.map(segs=>{
     let scoreSum=0,rankSum=0,days=0,clan='',server='';
     validDates.forEach(d=>{ // 昇順なので最後に出た表記が表示名になる
-      const recs=pools[d].filter(e=>names.has(e.clan));
+      const recs=pools[d].filter(e=>segsHave(segs,e));
       if(!recs.length) return; // 圏外/未参加日は無視
       const best=recs.reduce((a,b)=>b.score>a.score?b:a);
       const rank=pools[d].filter(e=>e.score>best.score).length+1; // 同点は同順位
@@ -823,60 +831,117 @@ function getClanNames(clanName){
   getClanAliases(clanName).forEach(a=>all.add(a));
   return [...all];
 }
-// clanName（改名系譜を含む）が合併後クラン or 合併元として関わる合併を全て返す
+// ===== 系譜（改名＋合併）の判定 =====
+// 系譜は {name, from, to} の区間（from 以上 to 未満、null は無制限）の配列で表す。
+// 通常のクランは無制限の区間1つだが、remains:true の合併元は合流日で系譜が分かれ、
+// 合流日より前の記録は合併後クランに、合流日以降の記録は同名の別クラン（残留メンバー）に属する。
+function splitDatesOf(names){
+  const ds=new Set();
+  Object.values(CLAN_MERGES).forEach(sources=>sources.forEach(s=>{ if(s.remains&&names.includes(s.name)) ds.add(s.date); }));
+  return [...ds].sort();
+}
+// clanName（改名系譜を含む）の、asOf 時点が属する区間
+function lineageSegs(clanName,asOf){
+  const names=getClanNames(clanName);
+  const ds=splitDatesOf(names);
+  const from=[...ds].reverse().find(d=>d<=asOf)||null;
+  const to=ds.find(d=>d>asOf)||null;
+  return names.map(name=>({name,from,to}));
+}
+function latestDate(){ return getDates()[0]||'9999-12-31'; }
+function dayBefore(iso){ return new Date(Date.parse(iso)-864e5).toISOString().slice(0,10); }
+function segKey(x){ return `${x.name}|${x.from||''}|${x.to||''}`; }
+function segHas(x,e){ return x.name===e.clan&&(!x.from||e.date>=x.from)&&(!x.to||e.date<x.to); }
+function segsHave(segs,e){ return segs.some(x=>segHas(x,e)); }
+function segsOverlap(a,b){ return a.name===b.name&&(!a.from||!b.to||a.from<b.to)&&(!b.from||!a.to||b.from<a.to); }
+// 合併1件が結び付ける区間: 合併後クランは合流時点の区間、合併元は合流日前日時点の区間
+function mergeSegs(target,sources){
+  const last=sources.map(s=>s.date).sort().pop();
+  const segs=lineageSegs(target,last);
+  sources.forEach(s=>lineageSegs(s.name,dayBefore(s.date)).forEach(x=>segs.push(x)));
+  return segs;
+}
+// ownSegs（自分の改名系譜の区間）が合併後クラン or 合併元として直接関わる合併を全て返す
 // （例: 万鬼一華 は 万紫千紅 を吸収した合併後クランであり、X͓̽ˣLiภk̶ への合併元でもある）
-function getMergeInfos(clanName){
-  const myNames=getClanNames(clanName);
+function getMergeInfos(ownSegs){
   return Object.entries(CLAN_MERGES)
-    .filter(([target,sources])=>myNames.includes(target) || sources.some(s=>myNames.includes(s.name)))
+    .filter(([target,sources])=>mergeSegs(target,sources).some(m=>ownSegs.some(f=>segsOverlap(m,f))))
     .map(([target,sources])=>({target,sources}));
 }
-// 改名に加えて合併の系譜も含めた全名称。履歴の連結（モーダル・グラフ・平均集計）で使う
-// 連鎖合併（A→B→C）も閉包を取って全て辿る
-function getClanFamily(clanName){
-  const all=new Set(getClanNames(clanName));
+// remains 合併で分岐した後の系譜（残留メンバー側）なら、その分岐元の合併を返す
+function getSplitInfos(clanName,ownSegs){
+  const names=getClanNames(clanName);
+  return Object.entries(CLAN_MERGES).flatMap(([target,sources])=>
+    sources.filter(s=>s.remains&&names.includes(s.name)&&ownSegs.some(f=>f.from===s.date)).map(s=>({target,source:s})));
+}
+// 改名に加えて合併の系譜も含めた全区間。履歴の連結（モーダル・グラフ・平均集計）で使う
+// 連鎖合併（A→B→C）も閉包を取って全て辿る。asOf 省略時は最新日時点の系譜
+function getClanFamily(clanName,asOf){
+  const all=lineageSegs(clanName,asOf||latestDate());
+  const keys=new Set(all.map(segKey));
   let grew=true;
   while(grew){
     grew=false;
     for(const [target,sources] of Object.entries(CLAN_MERGES)){
-      const names=[target,...sources.map(s=>s.name)];
-      if(!names.some(n=>all.has(n))) continue;
-      names.forEach(n=>getClanNames(n).forEach(x=>{ if(!all.has(x)){ all.add(x); grew=true; } }));
+      const ms=mergeSegs(target,sources);
+      if(!ms.some(m=>all.some(f=>segsOverlap(m,f)))) continue;
+      ms.forEach(m=>{ const k=segKey(m); if(!keys.has(k)){ keys.add(k); all.push(m); grew=true; } });
     }
   }
-  return [...all];
+  return all;
 }
 // 同日に合併元が複数いる場合はベストスコアの1件を代表にする（平均集計と同じ規則）
 function findFamilyRec(family,date){
-  const recs=entries.filter(e=>e.date===date&&family.includes(e.clan));
+  const recs=entries.filter(e=>e.date===date&&segsHave(family,e));
   return recs.length?recs.reduce((a,b)=>b.score>a.score?b:a):null;
 }
 
-function openClanModal(clan){
+// asOf: どの日付時点の系譜を開くか（remains 合併で分岐した同名クランの区別用）。省略時は最新日
+function openClanModal(clan,asOf){
   const txt=document.createElement('textarea'); txt.innerHTML=clan; const clanName=txt.value;
+  asOf=asOf||latestDate();
   const isAll=selectedSv==='all';
-  const allNames=getClanFamily(clanName);
+  const ownNames=lineageSegs(clanName,asOf);
+  const allNames=getClanFamily(clanName,asOf);
   // クランが所属した SV帯の一覧（統合前後で名前が変わるため複数になりうる）。表示は最新区分を優先
-  const clanSvs=[...new Set(entries.filter(e=>allNames.includes(e.clan)).map(e=>e.server))];
+  const clanSvs=[...new Set(entries.filter(e=>segsHave(allNames,e)).map(e=>e.server))];
   const clanServer=clanSvs.find(s=>NEW_SVS.includes(s))||clanSvs[0]||'';
   const aliases=getClanAliases(clanName);
   let aliasHtml='';
   if(aliases.length>0) aliasHtml=`<div style="font-size:10px;color:var(--muted);margin-top:3px;">旧名: ${aliases.join(' / ')}</div>`;
-  getMergeInfos(clanName).forEach(merge=>{
+  getMergeInfos(ownNames).forEach(merge=>{
     const isTarget=getClanNames(clanName).includes(merge.target);
-    const label=isTarget
-      ?'合併元: '+merge.sources.map(s=>`${s.name}（${fmtDShort(s.date)}合流）`).join(' / ')
-      :`${fmtDShort(merge.sources.find(s=>getClanNames(clanName).includes(s.name)).date)} に ${merge.target} へ合流`;
+    const remainsNote='残留メンバーは別系譜として存続';
+    let label;
+    if(isTarget){
+      label='合併元: '+merge.sources.map(s=>`${s.name}（${fmtDShort(s.date)}合流${s.remains?'・'+remainsNote:''}）`).join(' / ');
+    } else {
+      const src=merge.sources.find(s=>getClanNames(clanName).includes(s.name));
+      label=`${fmtDShort(src.date)} に ${merge.target} へ合流${src.remains?'（'+remainsNote+'）':''}`;
+    }
     aliasHtml+=`<div style="font-size:10px;color:#80b0f0;margin-top:3px;">⚭ ${label}</div>`;
+  });
+  getSplitInfos(clanName,ownNames).forEach(sp=>{
+    aliasHtml+=`<div style="font-size:10px;color:#80b0f0;margin-top:3px;">⚭ ${fmtDShort(sp.source.date)} に ${sp.target} と合併</div>`;
   });
   document.getElementById('modalTitle').innerHTML=clanName+`<span style="font-size:9px;color:#80b0f0;background:rgba(64,128,224,0.15);border:1px solid rgba(64,128,224,0.25);border-radius:3px;padding:1px 5px;margin-left:7px;vertical-align:middle;line-height:1;display:inline-flex;align-items:center;">${clanServer}</span>`;
   document.getElementById('modalSubtitle').innerHTML=`${isAll?'全体順位':`SV${selectedSv}内順位`}${aliasHtml}`;
   const body=document.getElementById('modalBody'); body.innerHTML='';
   const allDates=[...new Set(entries.map(e=>e.date))].sort((a,b)=>b.localeCompare(a));
   // 1日1行に集約する。自分の改名系譜を優先し、そこにデータがない日だけ合併元で穴埋めする
-  const ownNames=getClanNames(clanName);
+  // remains 合併で分岐した後の系譜（残留側）では、分岐前の日付は分岐前の同名クラン
+  // （とそれが吸収した合併元）の記録を表示する。合併後クラン側の記録では埋めない
+  const own0=ownNames[0];
+  let prevOwn=[],prevFill=[];
+  if(own0.from){
+    prevOwn=lineageSegs(clanName,dayBefore(own0.from));
+    getMergeInfos(prevOwn).filter(m=>getClanNames(clanName).includes(m.target))
+      .forEach(m=>m.sources.forEach(s=>lineageSegs(s.name,dayBefore(s.date)).forEach(x=>prevFill.push(x))));
+  }
   allDates.forEach(date=>{
-    const best=findFamilyRec(ownNames,date)||findFamilyRec(allNames,date);
+    const isPrev=own0.from&&date<own0.from;
+    const best=findFamilyRec(ownNames,date)||findFamilyRec(allNames,date)
+      ||(isPrev?(findFamilyRec(prevOwn,date)||findFamilyRec(prevFill,date)):null);
     const recs=best?[{...best,usedName:best.clan}]:[];
     if(recs.length===0){
       const row=document.createElement('div'); row.className='modal-row';
