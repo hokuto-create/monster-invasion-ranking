@@ -146,6 +146,10 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5.5vw,38px);font-w
 .modal-rank.r3{color:#e08040;}
 .modal-rank.rx{color:var(--muted);}
 .modal-score{font-family:'Exo 2',sans-serif;font-weight:700;color:var(--gold);text-align:right;}
+.modal-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px;}
+.modal-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:12px;padding:9px 0 7px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:1px;}
+.modal-tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700;}
+.modal-sub{font-family:'Noto Sans JP',sans-serif;font-size:9px;font-weight:400;color:var(--muted);margin-top:2px;}
 .ts-form{padding:16px 18px;}
 .ts-grid{display:grid;gap:8px;}
 .ts-row{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;}
@@ -174,7 +178,12 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
       <div><div class="modal-title" id="modalTitle"></div><div id="modalSubtitle" style="font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:1px;"></div></div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="modalTabDaily" onclick="switchModalTab('daily')">日別</button>
+      <button class="modal-tab" id="modalTabDow" onclick="switchModalTab('dow')">曜日別ベスト</button>
+    </div>
     <div class="modal-body" id="modalBody"></div>
+    <div class="modal-body" id="modalDowBody" style="display:none"></div>
   </div>
 </div>
 <div class="wrap">
@@ -340,7 +349,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261028-1';
+const APP_VERSION = '20261030-2';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -944,6 +953,7 @@ function openClanModal(clan,asOf){
   document.getElementById('modalSubtitle').innerHTML=`${isAll?'全体順位':`SV${selectedSv}内順位`}${aliasHtml}`;
   const body=document.getElementById('modalBody'); body.innerHTML='';
   const allDates=[...new Set(entries.map(e=>e.date))].sort((a,b)=>b.localeCompare(a));
+  const hist=[]; // 曜日別ベスト用: 記録のあった日の {date, rec, rank}
   // 1日1行に集約する。自分の改名系譜を優先し、そこにデータがない日だけ合併元で穴埋めする
   // remains 合併で分岐した後の系譜（残留側）では、分岐前の日付は分岐前の同名クラン
   // （とそれが吸収した合併元）の記録を表示する。合併後クラン側の記録では埋めない
@@ -977,7 +987,7 @@ function openClanModal(clan,asOf){
           if(hasPartial){
             const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
             row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank rx" style="font-size:10px;color:var(--muted);">未集計</div><div class="modal-score">${formatScore(rec.score)}${nameTag}</div>`;
-            body.appendChild(row); return;
+            body.appendChild(row); hist.push({date,rec,rank:null}); return;
           }
         }
         const recServer=rec.server||clanServer;
@@ -989,13 +999,45 @@ function openClanModal(clan,asOf){
         const nameTag=rec.usedName!==clanName?`<br><span style="font-size:9px;color:var(--muted);">${rec.usedName}</span>`:'';
         const svTag=!isAll&&date<SV_MERGE_DATE?`<br><span style="font-size:9px;color:#80b0f0;">旧SV${recServer}</span>`:'';
         row.innerHTML=`<div class="modal-date">${ri===0?fmtD(date):''}</div><div class="modal-rank ${rc}">${rank}</div><div class="modal-score">${formatScore(rec.score)}${nameTag}${svTag}</div>`;
-        body.appendChild(row);
+        body.appendChild(row); hist.push({date,rec,rank});
       });
     }
   });
+  renderDowBest(hist,clanName);
+  switchModalTab(modalTab);
   document.getElementById('clanModal').style.display='flex';
 }
 function closeModal(){ document.getElementById('clanModal').style.display='none'; }
+
+// 曜日（= ボス）ごとのベストスコア。日別タブで出した記録（合併元の穴埋め込み）から集計する
+let modalTab='daily';
+function switchModalTab(tab){
+  modalTab=tab;
+  const isDaily=tab==='daily';
+  document.getElementById('modalBody').style.display=isDaily?'block':'none';
+  document.getElementById('modalDowBody').style.display=isDaily?'none':'block';
+  document.getElementById('modalTabDaily').classList.toggle('active',isDaily);
+  document.getElementById('modalTabDow').classList.toggle('active',!isDaily);
+}
+function renderDowBest(hist,clanName){
+  const days=['日','月','火','水','木','金','土'];
+  const body=document.getElementById('modalDowBody'); body.innerHTML='';
+  [1,2,3,4,5,6,0].forEach(dow=>{
+    const hs=hist.filter(h=>{ const[y,m,d]=h.date.split('-'); return new Date(+y,+m-1,+d).getDay()===dow; });
+    const row=document.createElement('div'); row.className='modal-row';
+    const label=`${days[dow]}曜<br><span style="font-size:9px;opacity:0.7;">${DOW_TO_BOSS[dow]}</span>`;
+    if(!hs.length){
+      row.innerHTML=`<div class="modal-date">${label}</div><div class="modal-rank rx" style="font-size:10px;">-</div><div class="modal-score" style="color:var(--muted);font-size:12px;">記録なし</div>`;
+      body.appendChild(row); return;
+    }
+    const best=hs.reduce((a,b)=>b.rec.score>a.rec.score?b:a);
+    const rc=best.rank===1?'r1':best.rank===2?'r2':best.rank===3?'r3':'rx';
+    const rankHtml=best.rank==null?`<div class="modal-rank rx" style="font-size:10px;">未集計</div>`:`<div class="modal-rank ${rc}">${best.rank}</div>`;
+    const nameTag=best.rec.clan!==clanName?` · ${best.rec.clan}`:'';
+    row.innerHTML=`<div class="modal-date">${label}</div>${rankHtml}<div class="modal-score">${formatScore(best.rec.score)}<div class="modal-sub">${fmtDShort(best.date)}${nameTag}</div></div>`;
+    body.appendChild(row);
+  });
+}
 
 function switchNav(tab){
   const isRanking=tab==='ranking';
