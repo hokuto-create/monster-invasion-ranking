@@ -351,7 +351,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261031-3';
+const APP_VERSION = '20261031-4';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -590,8 +590,9 @@ function renderSvBar(){
   const bar=document.getElementById('svBar');
   const rowStyle=last=>`<div style="display:flex;gap:6px;flex-wrap:wrap;${last?'':'margin-bottom:6px;'}">`;
   if(rankMode==='avg'||rankMode==='dow'){
-    // 期間平均・曜日別ベストは新旧どちらの区分も選べるように全て並べる
-    const rows=[NEW_SVS,OLD_SVS.slice(0,5),OLD_SVS.slice(5)];
+    // 期間平均・曜日別ベストは現行（統合後）の区分だけ並べる
+    if(selectedSv!=='all'&&!NEW_SVS.includes(selectedSv)) selectedSv='all';
+    const rows=[NEW_SVS];
     let html='';
     rows.forEach((row,i)=>{
       html+=rowStyle(i===rows.length-1);
