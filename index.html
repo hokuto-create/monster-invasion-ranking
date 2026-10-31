@@ -349,7 +349,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261030-2';
+const APP_VERSION = '20261031-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -426,7 +426,7 @@ const CLAN_ALIASES = {
   "鉱脈無敗集団": ["小秋見つけ隊"],
   "秋吉": ["小秋見つけ隊", "鉱脈無敗集団"],
   "烏骨鶏": ["小秋見つけ隊", "鉱脈無敗集団", "秋吉"],
-  "Halloweenn": ["小秋見つけ隊", "鉱脈無敗集団", "秋吉", "烏骨鶏"],
+  "焼き芋食べ隊": ["小秋見つけ隊", "鉱脈無敗集団", "秋吉", "烏骨鶏", "Halloweenn"],
   "php2太郎": ["眠り猫"]
 };
 // ===== 合併の系譜 =====
