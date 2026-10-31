@@ -202,8 +202,10 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 <div class="mode-bar">
   <button class="date-chip active" id="modeDaily" onclick="setRankMode('daily')">📅 日別</button>
   <button class="date-chip" id="modeAvg" onclick="setRankMode('avg')">📊 期間平均</button>
+  <button class="date-chip" id="modeDow" onclick="setRankMode('dow')">👑 曜日別ベスト</button>
 </div>
 <div class="date-bar" id="dateBar"></div>
+<div class="date-bar" id="dowBar" style="display:none"></div>
 <div class="avg-controls" id="avgControls">
   <div class="graph-ctrl-group"><label>開始日</label><input type="date" class="avg-select" id="avgStart" onchange="onAvgPeriodChange('start')"></div>
   <div class="graph-ctrl-group"><label>終了日</label><input type="date" class="avg-select" id="avgEnd" onchange="onAvgPeriodChange('end')"></div>
@@ -349,7 +351,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261031-2';
+const APP_VERSION = '20261031-3';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -460,7 +462,8 @@ let entries = [];
 let timestamps = {};
 let selectedDate = null;
 let selectedSv = 'all';
-let rankMode = 'daily'; // 'daily' | 'avg'
+let rankMode = 'daily'; // 'daily' | 'avg' | 'dow'
+let selectedDow = null; // 曜日別ベストモードで選択中の曜日（0=日〜6=土）
 let avgStart = null, avgEnd = null, avgSort = 'score'; // avgSort: 'score' | 'rank'
 let avgMinDays = 'half'; // 足切り: 'half'（集計日数の半数以上）| '0' | '3' | '5' | '10'
 const tsEdits = {};
@@ -490,18 +493,20 @@ function save(){
 document.addEventListener('click', function(e){
   const dateBtn = e.target.closest('[data-date]');
   if(dateBtn){ selDate(dateBtn.getAttribute('data-date')); return; }
+  const dowBtn = e.target.closest('[data-dow]');
+  if(dowBtn){ selectedDow=+dowBtn.getAttribute('data-dow'); renderAll(); return; }
   const svBtn = e.target.closest('[data-sv]');
   if(svBtn){ selSv(svBtn.getAttribute('data-sv')); return; }
   const clanEl = e.target.closest('[data-clan]');
   if(clanEl){
     // 系譜が分岐しているクラン（remains 合併）は、表示中の日付時点の系譜を開く
-    const asOf=rankMode==='daily'?selectedDate:rankMode==='avg'?avgEnd:null;
+    const asOf=clanEl.getAttribute('data-asof')||(rankMode==='daily'?selectedDate:rankMode==='avg'?avgEnd:null);
     openClanModal(clanEl.getAttribute('data-clan'),asOf); return;
   }
 });
 
 function getDates(){ return [...new Set(entries.map(e=>e.date))].sort((a,b)=>b.localeCompare(a)); }
-function renderAll(){ renderDateBar(); renderSvBar(); renderRanking(); updateTsLabel(); }
+function renderAll(){ renderDateBar(); renderDowBar(); renderSvBar(); renderRanking(); updateTsLabel(); }
 
 function renderDateBar(){
   const dates=getDates(), bar=document.getElementById('dateBar');
@@ -517,6 +522,14 @@ function fmtD(iso){
   return `${+m}/${+d}(${days[dow]})<br><span style="font-size:9px;opacity:0.7;">${bosses[dow]}</span>`;
 }
 function selDate(d){ selectedDate=d; renderAll(); }
+// 曜日別ベストモードの曜日チップ（月〜日の順）。初期選択は最新データの曜日
+function renderDowBar(){
+  const bar=document.getElementById('dowBar');
+  const dates=getDates();
+  if(selectedDow===null&&dates.length){ const[y,m,d]=dates[0].split('-'); selectedDow=new Date(+y,+m-1,+d).getDay(); }
+  const days=['日','月','火','水','木','金','土'];
+  bar.innerHTML=[1,2,3,4,5,6,0].map(w=>`<button class="date-chip${w===selectedDow?' active':''}" data-dow="${w}" style="line-height:1.3;padding:5px 13px;">${days[w]}曜<br><span style="font-size:9px;opacity:0.7;">${DOW_TO_BOSS[w]}</span></button>`).join('');
+}
 
 // ===== 期間平均モード =====
 function fmtDShort(iso){
@@ -528,7 +541,9 @@ function setRankMode(m){
   rankMode=m;
   document.getElementById('modeDaily').classList.toggle('active',m==='daily');
   document.getElementById('modeAvg').classList.toggle('active',m==='avg');
+  document.getElementById('modeDow').classList.toggle('active',m==='dow');
   document.getElementById('dateBar').style.display=m==='daily'?'flex':'none';
+  document.getElementById('dowBar').style.display=m==='dow'?'flex':'none';
   document.getElementById('avgControls').classList.toggle('open',m==='avg');
   if(m==='avg') initAvgSelects();
   renderAll();
@@ -574,8 +589,8 @@ function setAvgMinDays(v){ avgMinDays=v; renderRanking(); }
 function renderSvBar(){
   const bar=document.getElementById('svBar');
   const rowStyle=last=>`<div style="display:flex;gap:6px;flex-wrap:wrap;${last?'':'margin-bottom:6px;'}">`;
-  if(rankMode==='avg'){
-    // 期間平均は新旧どちらの区分も選べるように全て並べる
+  if(rankMode==='avg'||rankMode==='dow'){
+    // 期間平均・曜日別ベストは新旧どちらの区分も選べるように全て並べる
     const rows=[NEW_SVS,OLD_SVS.slice(0,5),OLD_SVS.slice(5)];
     let html='';
     rows.forEach((row,i)=>{
@@ -609,7 +624,7 @@ function renderSvBar(){
 function selSv(sv){ selectedSv=sv; renderSvBar(); renderRanking(); updateTsLabel(); }
 
 function updateTsLabel(){
-  if(rankMode==='avg') return; // 期間平均モードではrenderAvgRankingが設定する
+  if(rankMode!=='daily') return; // 期間平均・曜日別ベストは各 render 関数が設定する
   const el=document.getElementById('tsLabel');
   const ts=timestamps[selectedDate];
   el.textContent=ts?'🕐 '+ts:'';
@@ -697,8 +712,36 @@ function renderAvgRanking(){
   });
 }
 
+// 曜日別ベストランキング: 全期間で、選択した曜日の各クラン（系譜単位）のベストスコアを並べる
+function renderDowRanking(){
+  const body=document.getElementById('rankBody');
+  const tsEl=document.getElementById('tsLabel');
+  document.getElementById('theadLast').textContent='ベストスコア';
+  if(selectedDow===null){ body.innerHTML='<div class="empty">データがありません</div>'; tsEl.textContent=''; return; }
+  const days=['日','月','火','水','木','金','土'];
+  const rows=dowBestsBySv(selectedSv).filter(g=>g.rec[selectedDow]).sort((a,b)=>b.best[selectedDow]-a.best[selectedDow]);
+  tsEl.textContent=`👑 ${days[selectedDow]}曜（${DOW_TO_BOSS[selectedDow]}）の全期間ベスト・${rows.length}クラン`;
+  if(!rows.length){ body.innerHTML='<div class="empty">データがありません</div>'; return; }
+  body.innerHTML='';
+  const ranks=[];
+  rows.forEach((g,i)=>{
+    const rec=g.rec[selectedDow], name=g.last.clan;
+    const r=(i>0&&g.best[selectedDow]===rows[i-1].best[selectedDow])?ranks[i-1]:i+1; // 同点は同順位
+    ranks[i]=r;
+    const bc=r===1?'b1':r===2?'b2':r===3?'b3':'bx';
+    const topCls=r===1?'top1':r===2?'top2':r===3?'top3':'';
+    const sub=fmtDShort(rec.date)+(rec.clan!==name?` · ${esc(rec.clan)}`:'');
+    const row=document.createElement('div');
+    row.className=`rank-row ${r===1?'r1':''} ${topCls}`;
+    row.style.animationDelay=`${Math.min(i,20)*0.04}s`;
+    row.innerHTML=`<div><div class="badge ${bc}">${r}</div></div><div><span class="server-tag">${formatServer(rec.server)}</span></div><div><div class="clan-nm ${r===1?'clan-nm-r1':r<=3?'clan-nm-top':''}" data-clan="${esc(name)}" data-asof="${g.last.date}">${esc(name)}</div></div><div class="score-cell"><div class="score-val">${formatScore(rec.score)}</div><div class="avg-sub">${sub}</div></div>`;
+    body.appendChild(row);
+  });
+}
+
 function renderRanking(){
   if(rankMode==='avg'){ renderAvgRanking(); return; }
+  if(rankMode==='dow'){ renderDowRanking(); return; }
   document.getElementById('theadLast').textContent='スコア';
   const body=document.getElementById('rankBody');
   if(!selectedDate){body.innerHTML='<div class="empty">日付を選択してください</div>';return;}
@@ -922,7 +965,7 @@ function groupFamilies(list){
   return groups;
 }
 // 曜日別ベスト順位用: 系譜グループごとの曜日別ベストスコア。sv='all' なら全SV帯、それ以外はその SV帯の記録だけ
-// 戻り値は [{segs, best:[日..土のベスト or 0]}]。データが変わらない限り使い回す
+// 戻り値は [{segs, best:[日..土のベスト or 0], rec:[そのベストの記録], last:最新の記録}]。データが変わらない限り使い回す
 let dowBestCache={n:-1,bySv:{}};
 function dowBestsBySv(sv){
   if(dowBestCache.n!==entries.length) dowBestCache={n:entries.length,bySv:{}};
@@ -931,13 +974,15 @@ function dowBestsBySv(sv){
   const segToGroup={};
   const groups=groupFamilies(pool);
   groups.forEach((segs,g)=>segs.forEach(x=>{ segToGroup[segKey(x)]=g; }));
-  const list=groups.map(segs=>({segs,best:[0,0,0,0,0,0,0]}));
+  const list=groups.map(segs=>({segs,best:[0,0,0,0,0,0,0],rec:[null,null,null,null,null,null,null],last:null}));
   pool.forEach(e=>{
     const g=segToGroup[segKey(lineageSegs(e.clan,e.date)[0])];
     if(g===undefined) return;
     const[y,m,d]=e.date.split('-');
     const dow=new Date(+y,+m-1,+d).getDay();
-    if(e.score>list[g].best[dow]) list[g].best[dow]=e.score;
+    const G=list[g];
+    if(e.score>G.best[dow]){ G.best[dow]=e.score; G.rec[dow]=e; }
+    if(!G.last||e.date>G.last.date) G.last=e; // 表示名は最新の表記
   });
   dowBestCache.bySv[sv]=list;
   return list;
