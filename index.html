@@ -351,7 +351,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261108-1';
+const APP_VERSION = '20261109-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -389,6 +389,7 @@ const CLAN_ALIASES = {
   "L͓̽ieภRocks": ["L͓̽ieภ絆"],
   "L͓̽ienﷻSirius": ["L͓̽ieภ絆", "L͓̽ieภRocks"],
   "L͓̽ieภ": ["L͓̽ieภ絆", "L͓̽ieภRocks", "L͓̽ienﷻSirius"],
+  "L͓̽ien跡地": ["L͓̽ieภ絆", "L͓̽ieภRocks", "L͓̽ienﷻSirius", "L͓̽ieภ"],
   "3年G組": ["ｱﾁｬ伝"],
   "焼鳥クラン": ["焼鳥食べ隊"],
   "お盆休み隊": ["焼鳥食べ隊", "焼鳥クラン"],
@@ -431,7 +432,8 @@ const CLAN_ALIASES = {
   "秋吉": ["小秋見つけ隊", "鉱脈無敗集団"],
   "烏骨鶏": ["小秋見つけ隊", "鉱脈無敗集団", "秋吉"],
   "焼き芋食べ隊": ["小秋見つけ隊", "鉱脈無敗集団", "秋吉", "烏骨鶏", "Halloweenn"],
-  "php2太郎": ["眠り猫"]
+  "php2太郎": ["眠り猫"],
+  "眠り猫": ["php2太郎"]
 };
 // ===== 合併の系譜 =====
 // 複数クランが1つに合流した場合はこちら（改名は CLAN_ALIASES）。
