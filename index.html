@@ -351,7 +351,7 @@ input[type=date].avg-select::-webkit-calendar-picker-indicator{filter:invert(0.7
 const ADMIN_PW = 'jp_ranking';
 // ===== 自動更新チェック =====
 // index.html を更新したら APP_VERSION も必ず変更すること（ホーム画面アプリの古いキャッシュ検知用）
-const APP_VERSION = '20261121-1';
+const APP_VERSION = '20261123-1';
 async function checkUpdate(){
   try{
     const res = await fetch('./index.html?t=' + Date.now(), {cache:'no-store'});
@@ -428,7 +428,7 @@ const CLAN_ALIASES = {
   "改名_ChinCore_": ["龍核_DRΛCore_"],
   "白米_DRΛCome_": ["龍核_DRΛCore_"],
   "クラン名LOST": ["龍核_DRΛCore_", "アグメン帝国", "改名_ChinCore_", "白米_DRΛCome_"],
-  "乂珍選組乂": ["龍核_DRΛCore_", "アグメン帝国", "改名_ChinCore_", "白米_DRΛCome_", "クラン名LOST"],
+  "爆発崇拝教団": ["龍核_DRΛCore_", "アグメン帝国", "改名_ChinCore_", "白米_DRΛCome_", "クラン名LOST", "乂珍選組乂"],
   "いっぱち酒場": ["憩いの酒場"],
   "やまだJAPAN": ["やまだ家", "FCやまだ", "やまだ屋", "やまだ豕"],
   "やまだ家": ["FCやまだ", "やまだ屋", "やまだ豕", "やまだJAPAN"],
